@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff, KeyRound, HelpCircle, Smartphone, Laptop, Tablet, CheckCircle, X, Star, ArrowRight, ChevronRight, LineChart } from "lucide-react";
+import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff, KeyRound, HelpCircle, Smartphone, Laptop, Tablet, CheckCircle, X, Star, ArrowRight, ChevronRight, LineChart, Eye, BarChart2, Mail, Link2, Database, Download, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -572,8 +572,139 @@ export default function Profile() {
             </Button>
           </Card>
         </TabsContent>
-         <TabsContent value="privacy">
-          <p>Privacy settings will be here.</p>
+         <TabsContent value="privacy" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Privacy Settings</CardTitle>
+                <CardDescription>Control your privacy and data sharing preferences</CardDescription>
+              </div>
+              <Shield className="w-6 h-6 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold flex items-center gap-2"><Eye /> Profile Visibility</h3>
+                <div className="space-y-2 pl-6">
+                  <Label htmlFor="profile-visibility">Who can see your profile?</Label>
+                  <Select defaultValue="public">
+                    <SelectTrigger id="profile-visibility">
+                      <SelectValue placeholder="Select visibility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Public</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">Control who can view your profile and cooking activity</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold flex items-center gap-2"><Share2 /> Profile & Sharing</h3>
+                 <div className="space-y-4 pl-6">
+                    <div className="flex items-start space-x-2">
+                      <Checkbox id="allow-recipe-sharing" defaultChecked />
+                      <div className="grid gap-1.5 leading-none">
+                        <label htmlFor="allow-recipe-sharing" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                         Allow Recipe Sharing
+                        </label>
+                        <p className="text-sm text-muted-foreground">Let others share your recipes with the community</p>
+                      </div>
+                    </div>
+                     <div className="flex items-start space-x-2">
+                      <Checkbox id="community-interactions" defaultChecked />
+                      <div className="grid gap-1.5 leading-none">
+                        <label htmlFor="community-interactions" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                         Community Interactions
+                        </label>
+                        <p className="text-sm text-muted-foreground">Allow others to comment and rate your recipes</p>
+                      </div>
+                    </div>
+                </div>
+              </div>
+
+               <Separator />
+
+                <div className="space-y-4">
+                    <h3 className="text-base font-semibold flex items-center gap-2"><BarChart2 /> Data & Analytics</h3>
+                    <div className="space-y-4 pl-6">
+                        <div className="flex items-start space-x-2">
+                            <Checkbox id="activity-tracking" defaultChecked />
+                            <div className="grid gap-1.5 leading-none">
+                                <label htmlFor="activity-tracking" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Activity Tracking</label>
+                                <p className="text-sm text-muted-foreground">Track your cooking activities for personalized recommendations</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                            <Checkbox id="cooking-analytics" defaultChecked />
+                            <div className="grid gap-1.5 leading-none">
+                                <label htmlFor="cooking-analytics" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Cooking Analytics</label>
+                                <p className="text-sm text-muted-foreground">Analyze your cooking patterns to improve suggestions</p>
+                            </div>
+                        </div>
+                         <div className="flex items-start space-x-2">
+                            <Checkbox id="usage-data-collection" defaultChecked />
+                            <div className="grid gap-1.5 leading-none">
+                                <label htmlFor="usage-data-collection" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Usage Data Collection</label>
+                                <p className="text-sm text-muted-foreground">Help improve ChefAI by sharing anonymous usage data</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <Separator />
+                
+                <div className="space-y-4">
+                    <h3 className="text-base font-semibold flex items-center gap-2"><Mail /> Communications</h3>
+                    <div className="space-y-4 pl-6">
+                        <div className="flex items-start space-x-2">
+                            <Checkbox id="email-notifications" defaultChecked/>
+                            <div className="grid gap-1.5 leading-none">
+                                <label htmlFor="email-notifications" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email Notifications</label>
+                                <p className="text-sm text-muted-foreground">Receive notifications about your account and recipes</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                            <Checkbox id="marketing-communications" />
+                            <div className="grid gap-1.5 leading-none">
+                                <label htmlFor="marketing-communications" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Marketing Communications</label>
+                                <p className="text-sm text-muted-foreground">Receive updates about new features and cooking tips</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="text-base font-semibold flex items-center gap-2"><Link2 /> Third-Party Integration</h3>
+                   <div className="space-y-4 pl-6">
+                      <div className="flex items-start space-x-2">
+                          <Checkbox id="third-party-sharing" />
+                          <div className="grid gap-1.5 leading-none">
+                              <label htmlFor="third-party-sharing" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Third-Party Data Sharing</label>
+                              <p className="text-sm text-muted-foreground">Allow sharing anonymized data with cooking partners</p>
+                          </div>
+                      </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                 <div className="space-y-4">
+                    <h3 className="text-base font-semibold flex items-center gap-2"><Database /> Data Management</h3>
+                    <div className="space-y-2 pl-6">
+                        <div className="flex items-center gap-4">
+                           <Button variant="outline"><Download className="mr-2"/>Export My Data</Button>
+                           <Button variant="destructive"><Trash2 className="mr-2"/>Delete Account</Button>
+                        </div>
+                         <p className="text-sm text-muted-foreground">Export your data or permanently delete your account and all associated data</p>
+                    </div>
+                </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
