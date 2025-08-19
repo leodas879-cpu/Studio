@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChefHat, Home, Heart, Clock, BookOpen } from "lucide-react";
+import { ChefHat, Home, Heart, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainNavLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/full-recipe-view", label: "Full Recipe View", icon: BookOpen },
 ];
 
 const recipeCollectionsLinks = [
