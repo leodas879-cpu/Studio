@@ -6,6 +6,7 @@ import { useRecipeStore } from '@/store/recipe-store';
 import { RecipeDisplay } from '@/components/recipe-display';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtensilsCrossed } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function FullRecipeViewContent() {
   const searchParams = useSearchParams();
@@ -34,12 +35,38 @@ function FullRecipeViewContent() {
   return <RecipeDisplay recipe={recipeToShow} isLoading={false} />;
 }
 
+function LoadingFallback() {
+    return (
+        <div className="space-y-4">
+            <Skeleton className="h-12 w-3/4" />
+            <div className="space-y-6">
+                <div>
+                    <Skeleton className="h-8 w-1/3 mb-4" />
+                    <div className="flex flex-wrap gap-2">
+                        <Skeleton className="h-7 w-20 rounded-full" />
+                        <Skeleton className="h-7 w-24 rounded-full" />
+                        <Skeleton className="h-7 w-16 rounded-full" />
+                    </div>
+                </div>
+                <div>
+                    <Skeleton className="h-8 w-1/2 mb-4" />
+                    <div className="space-y-3">
+                        <Skeleton className="h-5 w-full" />
+                        <Skeleton className="h-5 w-11/12" />
+                        <Skeleton className="h-5 w-full" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 export default function FullRecipeView() {
   return (
     <div>
       <h1 className="text-4xl font-bold font-headline tracking-tight mb-8">Full Recipe View</h1>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LoadingFallback />}>
         <FullRecipeViewContent />
       </Suspense>
     </div>

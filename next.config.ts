@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
         hostname: 'dummyimage.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'github.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
