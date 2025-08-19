@@ -14,6 +14,7 @@ import { Sparkles, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { useRecipeStore } from "@/store/recipe-store";
 
 const availableIngredients = [
   'Almonds', 'Avocado', 'Basil', 'Black Beans', 'Blueberries', 'Bread', 
@@ -40,6 +41,7 @@ export function RecipeGenerator() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { toast } = useToast();
+  const { addRecentRecipe } = useRecipeStore();
 
   const handleIngredientToggle = (ingredient: string) => {
     setSelectedIngredients((prev) =>
@@ -80,8 +82,9 @@ export function RecipeGenerator() {
         description: result.error,
       });
       setGeneratedRecipe(null);
-    } else {
+    } else if (result.data) {
       setGeneratedRecipe(result.data);
+      addRecentRecipe(result.data);
     }
     
     setIsLoading(false);

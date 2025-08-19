@@ -1,9 +1,12 @@
 import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UtensilsCrossed } from "lucide-react";
+import { UtensilsCrossed, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "./ui/separator";
+import { Button } from "./ui/button";
+import { useRecipeStore } from "@/store/recipe-store";
+import { cn } from "@/lib/utils";
 
 interface RecipeDisplayProps {
   recipe: GenerateRecipeOutput | null;
@@ -11,6 +14,8 @@ interface RecipeDisplayProps {
 }
 
 export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
+  const { favoriteRecipes, toggleFavorite } = useRecipeStore();
+
   if (isLoading) {
     return <RecipeSkeleton />;
   }
@@ -27,13 +32,15 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
     );
   }
 
+  const isFavorite = favoriteRecipes.some(r => r.recipeName === recipe.recipeName);
+
   return (
-    <Card className="h-full overflow-auto animate-in fade-in-50 duration-500 shadow-lg">
+    <Card className="h-full overflow-auto animate-in fade-in-50 duration-500 shadow-lg flex flex-col">
       <CardHeader>
         <CardTitle className="text-4xl font-headline tracking-tight">{recipe.recipeName}</CardTitle>
         <CardDescription>A delicious recipe generated just for you by ChefAI.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-8">
+      <CardContent className="space-y-8 flex-1">
         <div>
           <h3 className="text-xl font-semibold mb-3 font-headline">Required Ingredients</h3>
           <div className="flex flex-wrap gap-2">
@@ -68,6 +75,17 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
           </>
         )}
       </CardContent>
+       <CardFooter className="bg-card/50 border-t mt-auto">
+        <Button 
+          variant="ghost" 
+          size="lg" 
+          onClick={() => toggleFavorite(recipe)} 
+          className="w-full text-lg"
+        >
+          <Heart className={cn("mr-2", isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
+          {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
