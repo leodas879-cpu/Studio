@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
+import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
   title: 'ChefAI',
@@ -22,16 +23,23 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <div className="flex-1 flex flex-col">
-            <Header />
-            <main className="flex-1 bg-background text-foreground p-8">
-              {children}
-            </main>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <div className="flex-1 flex flex-col">
+              <Header />
+              <main className="flex-1 bg-background text-foreground p-8">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
-        <Toaster />
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
