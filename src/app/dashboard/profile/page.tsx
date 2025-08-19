@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2 } from "lucide-react";
+import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, Video, VideoOff } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 export default function Profile() {
   const [profile, setProfile] = useState({
@@ -20,6 +24,46 @@ export default function Profile() {
     bio: "Passionate home cook exploring flavors from around the world",
     profilePhoto: "https://github.com/shadcn.png"
   });
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    let stream: MediaStream;
+    const getCameraPermission = async () => {
+      if (!isCameraOpen) {
+        if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({video: true});
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+      }
+    };
+
+    getCameraPermission();
+
+    return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    }
+  }, [isCameraOpen]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -27,10 +71,43 @@ export default function Profile() {
   };
   
   const handleSaveChanges = () => {
-    // Here you would typically handle the form submission, e.g., send to an API
     console.log("Saving profile:", profile);
-    // You can add a toast notification here to confirm saving
+    toast({
+      title: "Profile Saved!",
+      description: "Your changes have been successfully saved.",
+    });
   };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile(prev => ({ ...prev, profilePhoto: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
+  }
+
+  const takePicture = () => {
+    if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if (context) {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            setProfile(prev => ({ ...prev, profilePhoto: dataUrl }));
+            setIsCameraOpen(false); // Close dialog after taking picture
+        }
+    }
+  }
 
 
   return (
@@ -67,8 +144,34 @@ export default function Profile() {
                     <p className="mt-2 text-sm text-muted-foreground">Drop photo here</p>
                   </div>
                   <div className="flex gap-4 w-full">
-                    <Button variant="outline" className="w-full"><Upload className="mr-2"/>Choose File</Button>
-                    <Button variant="outline" className="w-full"><Camera className="mr-2"/>Take Photo</Button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                    <Button variant="outline" className="w-full" onClick={triggerFileSelect}><Upload className="mr-2"/>Choose File</Button>
+                    <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="w-full"><Camera className="mr-2"/>Take Photo</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Take a Photo</DialogTitle>
+                            </DialogHeader>
+                            <div>
+                                <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted />
+                                <canvas ref={canvasRef} className="hidden" />
+                                {hasCameraPermission === false && (
+                                     <Alert variant="destructive" className="mt-4">
+                                        <VideoOff className="h-4 w-4" />
+                                        <AlertTitle>Camera Access Denied</AlertTitle>
+                                        <AlertDescription>
+                                            Please enable camera permissions in your browser settings.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={takePicture} disabled={!hasCameraPermission}>Snap Photo</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                   </div>
                   <p className="text-xs text-muted-foreground">Supported formats: JPG, PNG, GIF (max 5MB)</p>
                 </CardContent>
