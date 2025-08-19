@@ -8,22 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, Video, VideoOff } from "lucide-react";
+import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
+import { useProfileStore } from "@/store/profile-store";
 
 export default function Profile() {
-  const [profile, setProfile] = useState({
-    username: "chef_master_2024",
-    email: "chef@example.com",
-    firstName: "Alex",
-    lastName: "Johnson",
-    phone: "+1 (555) 123-4567",
-    bio: "Passionate home cook exploring flavors from around the world",
-    profilePhoto: "https://github.com/shadcn.png"
-  });
+  const { profile, setProfile } = useProfileStore();
+  const [localProfile, setLocalProfile] = useState(profile);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,6 +24,10 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
+  
+  useEffect(() => {
+    setLocalProfile(profile);
+  }, [profile]);
 
   useEffect(() => {
     let stream: MediaStream;
@@ -67,11 +64,11 @@ export default function Profile() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
+    setLocalProfile(prev => ({ ...prev, [name]: value }));
   };
   
   const handleSaveChanges = () => {
-    console.log("Saving profile:", profile);
+    setProfile(localProfile);
     toast({
       title: "Profile Saved!",
       description: "Your changes have been successfully saved.",
@@ -83,7 +80,7 @@ export default function Profile() {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfile(prev => ({ ...prev, profilePhoto: reader.result as string }));
+        setLocalProfile(prev => ({ ...prev, profilePhoto: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -103,7 +100,7 @@ export default function Profile() {
         if (context) {
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const dataUrl = canvas.toDataURL('image/png');
-            setProfile(prev => ({ ...prev, profilePhoto: dataUrl }));
+            setLocalProfile(prev => ({ ...prev, profilePhoto: dataUrl }));
             setIsCameraOpen(false); // Close dialog after taking picture
         }
     }
@@ -136,7 +133,7 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent className="flex flex-col items-center gap-4">
                   <Avatar className="w-32 h-32">
-                    <AvatarImage src={profile.profilePhoto} alt="Profile Photo" />
+                    <AvatarImage src={localProfile.profilePhoto} alt="Profile Photo" />
                     <AvatarFallback><User className="w-16 h-16" /></AvatarFallback>
                   </Avatar>
                    <div className="w-full p-6 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center">
@@ -227,32 +224,32 @@ export default function Profile() {
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
-                    <Input id="username" name="username" value={profile.username} onChange={handleInputChange} />
+                    <Input id="username" name="username" value={localProfile.username} onChange={handleInputChange} />
                     <p className="text-sm text-muted-foreground">This will be displayed on your recipes and profile</p>
                   </div>
                    <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" name="email" type="email" value={profile.email} onChange={handleInputChange} />
+                    <Input id="email" name="email" type="email" value={localProfile.email} onChange={handleInputChange} />
                     <p className="text-sm text-muted-foreground">Used for account notifications and password recovery</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" name="firstName" value={profile.firstName} onChange={handleInputChange}/>
+                      <Input id="firstName" name="firstName" value={localProfile.firstName} onChange={handleInputChange}/>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" name="lastName" value={profile.lastName} onChange={handleInputChange}/>
+                      <Input id="lastName" name="lastName" value={localProfile.lastName} onChange={handleInputChange}/>
                     </div>
                   </div>
                    <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" name="phone" type="tel" value={profile.phone} onChange={handleInputChange}/>
+                    <Input id="phone" name="phone" type="tel" value={localProfile.phone} onChange={handleInputChange}/>
                      <p className="text-sm text-muted-foreground">Optional - for account security notifications</p>
                   </div>
                    <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
-                    <Textarea id="bio" name="bio" value={profile.bio} onChange={handleInputChange} rows={4} placeholder="Tell us a little about your cooking journey"/>
+                    <Textarea id="bio" name="bio" value={localProfile.bio} onChange={handleInputChange} rows={4} placeholder="Tell us a little about your cooking journey"/>
                   </div>
                   <div className="flex justify-end">
                     <Button onClick={handleSaveChanges}>Save Changes</Button>
