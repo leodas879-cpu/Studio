@@ -10,9 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 
 const availableIngredients = [
   'Chicken', 'Beef', 'Pork', 'Fish', 'Tofu', 'Tempeh',
@@ -33,6 +34,7 @@ export function RecipeGenerator() {
   });
   const [generatedRecipe, setGeneratedRecipe] = useState<GenerateRecipeOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { toast } = useToast();
 
@@ -82,18 +84,32 @@ export function RecipeGenerator() {
     setIsLoading(false);
   };
 
+  const filteredIngredients = availableIngredients.filter(ingredient =>
+    ingredient.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="space-y-6">
           <Card className="bg-card/70">
             <CardHeader>
               <CardTitle className="font-headline text-2xl">1. Choose Your Ingredients</CardTitle>
-              <CardDescription>Select the items you have on hand.</CardDescription>
+              <CardDescription>Select the items you have on hand or search for them.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-64 border rounded-md p-4">
+            <CardContent className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search ingredients..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <ScrollArea className="h-60 border rounded-md p-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {availableIngredients.map((ingredient) => (
+                  {filteredIngredients.map((ingredient) => (
                     <div key={ingredient} className="flex items-center space-x-2">
                       <Checkbox
                         id={ingredient}
