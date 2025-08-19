@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: 'ChefAI',
