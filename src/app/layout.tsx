@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { Sidebar } from '@/components/sidebar';
+import { Header } from '@/components/header';
 
 export const metadata: Metadata = {
   title: 'ChefAI',
@@ -23,9 +24,12 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <div className="flex min-h-screen">
           <Sidebar />
-          <main className="flex-1 bg-background text-foreground p-8">
-            {children}
-          </main>
+          <div className="flex-1 flex flex-col">
+            <Header />
+            <main className="flex-1 bg-background text-foreground p-8">
+              {children}
+            </main>
+          </div>
         </div>
         <Toaster />
       </body>

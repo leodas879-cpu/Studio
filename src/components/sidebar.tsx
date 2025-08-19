@@ -2,15 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChefHat, Home, Heart, Clock, Settings, User, BookOpen } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChefHat, Home, Heart, Clock, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainNavLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/full-recipe-view", label: "Full Recipe View", icon: BookOpen },
-  { href: "/profile", label: "Profile", icon: User },
-  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const recipeCollectionsLinks = [
@@ -62,7 +59,9 @@ export function Sidebar() {
                <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                className={cn("flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                  pathname === link.href ? "bg-accent text-accent-foreground" : ""
+                )}
               >
                 <div className="flex items-center gap-3">
                   <link.icon className="h-5 w-5" />
@@ -74,18 +73,6 @@ export function Sidebar() {
           </div>
         </div>
       </nav>
-      <div className="p-6 border-t">
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CS</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-semibold">Chef Sarah</p>
-            <p className="text-sm text-muted-foreground">sarah.chef@example.com</p>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }
