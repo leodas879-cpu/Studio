@@ -42,7 +42,7 @@ export default function LandingPage() {
             </div>
             <div className="mt-12">
                <Image 
-                src="https://placehold.co/1200x600.png" 
+                src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200&h=600&fit=crop" 
                 alt="AI generated recipe on a plate"
                 data-ai-hint="food dish"
                 width={1200}
