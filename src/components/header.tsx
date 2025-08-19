@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,10 +15,21 @@ import Link from "next/link";
 import { useProfileStore } from "@/store/profile-store";
 import { useTheme } from "next-themes";
 import { Button } from "./ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+
 
 export function Header() {
   const { profile } = useProfileStore();
-  const { setTheme } = useTheme()
+  const { setTheme } = useTheme();
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
+
 
   return (
     <header className="bg-card text-card-foreground border-b p-4 flex justify-end items-center gap-4">
@@ -45,43 +57,45 @@ export function Header() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <div className="flex items-center gap-3 cursor-pointer">
-            <Avatar>
-              <AvatarImage src={profile.profilePhoto} alt="Profile Photo" />
-              <AvatarFallback>{profile.firstName?.[0]}{profile.lastName?.[0]}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold">{profile.firstName} {profile.lastName}</p>
-              <p className="text-sm text-muted-foreground">
-                {profile.email}
-              </p>
+      {!loading && user && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-3 cursor-pointer">
+              <Avatar>
+                <AvatarImage src={user.photoURL || profile.profilePhoto} alt="Profile Photo" />
+                <AvatarFallback>{profile.firstName?.[0]}{profile.lastName?.[0]}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold">{user.displayName || `${profile.firstName} ${profile.lastName}`}</p>
+                <p className="text-sm text-muted-foreground">
+                  {user.email}
+                </p>
+              </div>
             </div>
-          </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <Link href="/dashboard/profile">
-            <DropdownMenuItem className="cursor-pointer">
-              <User className="mr-2" />
-              <span>Profile</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <Link href="/dashboard/profile">
+              <DropdownMenuItem className="cursor-pointer">
+                <User className="mr-2" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/dashboard/settings">
+              <DropdownMenuItem className="cursor-pointer">
+                <Settings className="mr-2" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+            </Link>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <LogOut className="mr-2" />
+              <span>Log out</span>
             </DropdownMenuItem>
-          </Link>
-          <Link href="/dashboard/settings">
-            <DropdownMenuItem className="cursor-pointer">
-              <Settings className="mr-2" />
-              <span>Settings</span>
-            </DropdownMenuItem>
-          </Link>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="cursor-pointer">
-            <LogOut className="mr-2" />
-            <span>Log out</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </header>
   );
 }

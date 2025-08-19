@@ -1,9 +1,9 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import { Sidebar } from '@/components/sidebar';
-import { Header } from '@/components/header';
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
   title: 'ChefAI',
@@ -29,16 +29,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <div className="flex-1 flex flex-col">
-              <Header />
-              <main className="flex-1 bg-background text-foreground p-8">
-                {children}
-              </main>
-            </div>
-          </div>
-          <Toaster />
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
