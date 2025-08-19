@@ -13,6 +13,24 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useProfileStore } from "@/store/profile-store";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const cuisines = [
+  "Italian", "Mexican", "Chinese", "Indian", "Japanese", "Thai", "French", "Spanish", "Greek", "American"
+];
+
+const dietaryRestrictions = [
+    { id: "vegetarian", label: "Vegetarian", description: "No meat or fish" },
+    { id: "vegan", label: "Vegan", description: "No animal products" },
+    { id: "glutenFree", label: "Gluten-Free", description: "No gluten-containing ingredients" },
+    { id: "dairyFree", label: "Dairy-Free", description: "No dairy products" },
+    { id: "ketogenic", label: "Ketogenic", description: "Low-carb, high-fat diet" },
+    { id: "paleo", label: "Paleo", description: "Whole foods, no processed items" },
+    { id: "lowSodium", label: "Low Sodium", description: "" },
+    { id: "highProtein", label: "High Protein", description: "" },
+];
+
 
 export default function Profile() {
   const { profile, setProfile } = useProfileStore();
@@ -22,6 +40,13 @@ export default function Profile() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [cookingSkill, setCookingSkill] = useState("Intermediate");
+  const [cookingTime, setCookingTime] = useState("30-60 min");
+  const [spiceTolerance, setSpiceTolerance] = useState("Medium");
+  const [servingSize, setServingSize] = useState("2-4 People");
+  const [favoriteCuisine, setFavoriteCuisine] = useState("");
+  const [restrictions, setRestrictions] = useState<string[]>([]);
 
   const { toast } = useToast();
   
@@ -75,6 +100,13 @@ export default function Profile() {
     });
   };
 
+  const handlePreferencesSave = () => {
+    toast({
+      title: "Preferences Saved!",
+      description: "Your cooking preferences have been updated.",
+    });
+  };
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -105,6 +137,10 @@ export default function Profile() {
         }
     }
   }
+
+  const handleRestrictionChange = (id: string) => {
+    setRestrictions(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+  };
 
 
   return (
@@ -259,8 +295,113 @@ export default function Profile() {
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="preferences">
-          <p>Preferences settings will be here.</p>
+        <TabsContent value="preferences" className="mt-6">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Cooking Preferences</CardTitle>
+                <CardDescription>Customize your recipe recommendations</CardDescription>
+              </div>
+              <Settings className="w-6 h-6 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <Label htmlFor="cooking-skill">Cooking Skill Level</Label>
+                  <Select value={cookingSkill} onValueChange={setCookingSkill}>
+                    <SelectTrigger id="cooking-skill">
+                      <SelectValue placeholder="Select skill level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Beginner">Beginner</SelectItem>
+                      <SelectItem value="Intermediate">Intermediate</SelectItem>
+                      <SelectItem value="Advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">This helps us suggest appropriate recipes</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cooking-time">Preferred Cooking Time</Label>
+                  <Select value={cookingTime} onValueChange={setCookingTime}>
+                    <SelectTrigger id="cooking-time">
+                      <SelectValue placeholder="Select cooking time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Under 30 min">Under 30 min</SelectItem>
+                      <SelectItem value="30-60 min">Medium (30-60 min)</SelectItem>
+                      <SelectItem value="Over 60 min">Over 60 min</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">How much time do you usually have for cooking?</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="spice-tolerance">Spice Tolerance</Label>
+                  <Select value={spiceTolerance} onValueChange={setSpiceTolerance}>
+                    <SelectTrigger id="spice-tolerance">
+                      <SelectValue placeholder="Select spice tolerance" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Mild">Mild</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Spicy">Spicy</SelectItem>
+                    </SelectContent>
+                  </Select>
+                   <p className="text-sm text-muted-foreground">How spicy do you like your food?</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="serving-size">Typical Serving Size</Label>
+                  <Select value={servingSize} onValueChange={setServingSize}>
+                    <SelectTrigger id="serving-size">
+                      <SelectValue placeholder="Select serving size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1-2 People">1-2 People</SelectItem>
+                      <SelectItem value="2-4 People">2-4 People</SelectItem>
+                      <SelectItem value="4+ People">4+ People</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">How many people do you usually cook for?</p>
+                </div>
+                 <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="favorite-cuisines">Favorite Cuisines</Label>
+                  <Select value={favoriteCuisine} onValueChange={setFavoriteCuisine}>
+                    <SelectTrigger id="favorite-cuisines">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cuisines.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                   <p className="text-sm text-muted-foreground">Select your preferred cuisine types</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-semibold">Dietary Restrictions</Label>
+                <p className="text-sm text-muted-foreground">Select any dietary preferences or restrictions</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  {dietaryRestrictions.map(item => (
+                    <div key={item.id} className="flex items-start space-x-2">
+                       <Checkbox 
+                        id={item.id} 
+                        checked={restrictions.includes(item.id)}
+                        onCheckedChange={() => handleRestrictionChange(item.id)}
+                      />
+                      <div className="grid gap-1.5 leading-none">
+                        <label htmlFor={item.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          {item.label}
+                        </label>
+                        {item.description && <p className="text-sm text-muted-foreground">{item.description}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={handlePreferencesSave}>Save Preferences</Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="security">
           <p>Security settings will be here.</p>
