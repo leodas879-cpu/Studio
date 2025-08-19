@@ -16,12 +16,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 
 const availableIngredients = [
-  'Chicken', 'Beef', 'Pork', 'Fish', 'Tofu', 'Tempeh',
-  'Rice', 'Pasta', 'Quinoa', 'Potatoes', 'Sweet Potatoes', 'Bread',
-  'Tomatoes', 'Onions', 'Garlic', 'Bell Peppers', 'Broccoli', 'Carrots',
-  'Spinach', 'Kale', 'Mushrooms', 'Zucchini', 'Avocado',
-  'Cheese', 'Eggs', 'Milk', 'Yogurt', 'Butter',
-  'Flour', 'Sugar', 'Olive Oil', 'Lentils', 'Chickpeas', 'Black Beans'
+  'Almonds', 'Avocado', 'Basil', 'Black Beans', 'Blueberries', 'Bread', 
+  'Broccoli', 'Butter', 'Carrots', 'Cayenne Pepper', 'Cheese', 'Chicken', 
+  'Chickpeas', 'Cilantro', 'Cinnamon', 'Corn', 'Cumin', 'Coriander', 
+  'Eggs', 'Fish', 'Flour', 'Garlic', 'Ginger', 'Honey', 'Kale', 
+  'Lemon', 'Lentils', 'Lime', 'Maple Syrup', 'Milk', 'Mushrooms', 'Mustard', 
+  'Oats', 'Olive Oil', 'Onions', 'Paprika', 'Pasta', 'Pork', 'Potatoes', 
+  'Quinoa', 'Rice', 'Salmon', 'Shrimp', 'Soy Sauce', 'Spinach', 'Strawberries', 
+  'Sugar', 'Sweet Potatoes', 'Tempeh', 'Tofu', 'Tomatoes', 'Walnuts', 'Yogurt', 
+  'Zucchini'
 ].sort();
 
 export function RecipeGenerator() {
