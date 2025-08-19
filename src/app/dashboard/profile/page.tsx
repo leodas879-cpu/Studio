@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff, KeyRound, HelpCircle, Smartphone, Laptop, Tablet, CheckCircle, X } from "lucide-react";
+import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff, KeyRound, HelpCircle, Smartphone, Laptop, Tablet, CheckCircle, X, Star, ArrowRight, ChevronRight, LineChart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -16,6 +16,8 @@ import { useProfileStore } from "@/store/profile-store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const cuisines = [
   "Italian", "Mexican", "Chinese", "Indian", "Japanese", "Thai", "French", "Spanish", "Greek", "American"
@@ -37,6 +39,41 @@ const connectedDevices = [
     { icon: Smartphone, name: "iPhone 15", location: "San Francisco, CA", lastActive: "Jan 22, 2025, 03:20 PM", isCurrent: false },
     { icon: Tablet, name: "iPad Air", location: "San Francisco, CA", lastActive: "Jan 21, 2025, 07:30 PM", isCurrent: false },
 ]
+
+const activityLog = [
+    {
+        icon: ChefHat,
+        title: "Generated Creamy Mushroom Risotto",
+        description: "Used ingredients: mushrooms, arborio rice, parmesan, white wine",
+        category: "Recipe Generated",
+        date: "Jan 22",
+        color: "text-green-600"
+    },
+    {
+        icon: Heart,
+        title: "Added Spicy Thai Basil Chicken to favorites",
+        description: "Saved for quick access in your recipe collection",
+        category: "Recipe Favorited",
+        date: "Jan 22",
+        color: "text-red-500"
+    },
+    {
+        icon: Star,
+        title: "Cooked Mediterranean Quinoa Bowl",
+        description: "Rated 5 stars and left a review",
+        category: "Recipe Cooked",
+        date: "Jan 21",
+        color: "text-yellow-500"
+    },
+    {
+        icon: Settings,
+        title: "Updated cooking preferences",
+        description: "Changed skill level to intermediate and added dietary restrictions",
+        category: "Profile Updated",
+        date: "Jan 21",
+        color: "text-blue-500"
+    },
+];
 
 export default function Profile() {
   const { profile, setProfile } = useProfileStore();
@@ -495,8 +532,45 @@ export default function Profile() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="activity">
-          <p>Activity feed will be here.</p>
+        <TabsContent value="activity" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Your cooking journey and recipe interactions</CardDescription>
+              </div>
+              <LineChart className="w-6 h-6 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-96">
+                <div className="space-y-4">
+                  {activityLog.map((item, index) => (
+                    <div key={index}>
+                      <div className="flex items-start gap-4">
+                        <div className={`mt-1 rounded-full p-2 bg-accent/50 ${item.color}`}>
+                          <item.icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold">{item.title}</p>
+                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {item.category} &bull; {item.date}
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="self-center">
+                            <ChevronRight className="w-5 h-5 text-muted-foreground"/>
+                        </Button>
+                      </div>
+                      {index < activityLog.length - 1 && <Separator className="my-4" />}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+            <Button variant="link" className="w-full text-primary">
+                View All Activity <ArrowRight className="ml-2"/>
+            </Button>
+          </Card>
         </TabsContent>
          <TabsContent value="privacy">
           <p>Privacy settings will be here.</p>
