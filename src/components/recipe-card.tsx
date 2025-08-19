@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
