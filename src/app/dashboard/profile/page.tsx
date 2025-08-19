@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff } from "lucide-react";
+import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff, KeyRound, HelpCircle, Smartphone, Laptop, Tablet, CheckCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useProfileStore } from "@/store/profile-store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const cuisines = [
   "Italian", "Mexican", "Chinese", "Indian", "Japanese", "Thai", "French", "Spanish", "Greek", "American"
@@ -31,6 +32,11 @@ const dietaryRestrictions = [
     { id: "highProtein", label: "High Protein", description: "" },
 ];
 
+const connectedDevices = [
+    { icon: Laptop, name: "MacBook Pro", location: "San Francisco, CA", lastActive: "Jan 22, 2025, 04:45 PM", isCurrent: true },
+    { icon: Smartphone, name: "iPhone 15", location: "San Francisco, CA", lastActive: "Jan 22, 2025, 03:20 PM", isCurrent: false },
+    { icon: Tablet, name: "iPad Air", location: "San Francisco, CA", lastActive: "Jan 21, 2025, 07:30 PM", isCurrent: false },
+]
 
 export default function Profile() {
   const { profile, setProfile } = useProfileStore();
@@ -403,8 +409,91 @@ export default function Profile() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="security">
-          <p>Security settings will be here.</p>
+        <TabsContent value="security" className="mt-6">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Account Security</CardTitle>
+                <CardDescription>Manage your account security and login settings</CardDescription>
+              </div>
+              <Shield className="w-6 h-6 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="p-4 rounded-lg border flex items-start gap-4">
+                    <Clock className="w-8 h-8 text-muted-foreground mt-1"/>
+                    <div>
+                        <p className="font-semibold">Last Login</p>
+                        <p className="text-muted-foreground text-sm">Jan 22, 2025, 02:30 PM</p>
+                        <p className="text-muted-foreground text-sm">San Francisco, CA</p>
+                    </div>
+                </div>
+                <div className="p-4 rounded-lg border flex items-start gap-4">
+                    <HelpCircle className="w-8 h-8 text-muted-foreground mt-1"/>
+                    <div>
+                        <p className="font-semibold">Connected Devices</p>
+                        <p className="text-muted-foreground text-sm">3 active devices</p>
+                    </div>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-semibold flex items-center gap-2"><KeyRound/>Password & Authentication</Label>
+                <div className="mt-4 flex flex-col sm:flex-row gap-4">
+                    <Button variant="outline">Change Password</Button>
+                    <RadioGroup defaultValue="disable-2fa" className="flex items-center gap-4">
+                       <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="enable-2fa" id="enable-2fa" />
+                        <Label htmlFor="enable-2fa">Enable 2FA</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="disable-2fa" id="disable-2fa" />
+                        <Label htmlFor="disable-2fa">Disable 2FA</Label>
+                      </div>
+                    </RadioGroup>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-base font-semibold flex items-center gap-2"><Laptop/>Connected Devices</Label>
+                 <div className="mt-4 space-y-4">
+                    {connectedDevices.map((device, index) => (
+                        <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center gap-4">
+                                <device.icon className="w-8 h-8 text-muted-foreground"/>
+                                <div>
+                                    <p className="font-semibold">{device.name} {device.isCurrent && <span className="text-xs text-primary font-medium bg-primary/20 px-2 py-1 rounded-full ml-2">Current</span>}</p>
+                                    <p className="text-sm text-muted-foreground">{device.location} • Last active {device.lastActive}</p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                <X className="w-5 h-5"/>
+                            </Button>
+                        </div>
+                    ))}
+                 </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-semibold">Security Tips</Label>
+                 <div className="mt-4 p-4 border rounded-lg bg-accent/50 space-y-3">
+                    <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5"/>
+                        <p className="text-sm text-muted-foreground">Use a strong, unique password for your account</p>
+                    </div>
+                     <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5"/>
+                        <p className="text-sm text-muted-foreground">Enable two-factor authentication for extra security</p>
+                    </div>
+                     <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5"/>
+                        <p className="text-sm text-muted-foreground">Regularly review and remove unused connected devices</p>
+                    </div>
+                 </div>
+              </div>
+
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="activity">
           <p>Activity feed will be here.</p>
