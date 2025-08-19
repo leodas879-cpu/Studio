@@ -31,7 +31,7 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
     <Card className="h-full overflow-auto animate-in fade-in-50 duration-500 shadow-lg">
       <CardHeader>
         <CardTitle className="text-4xl font-headline tracking-tight">{recipe.recipeName}</CardTitle>
-        <CardDescription>A delicious recipe generated just for you by RecipeAI.</CardDescription>
+        <CardDescription>A delicious recipe generated just for you by ChefAI.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
         <div>
