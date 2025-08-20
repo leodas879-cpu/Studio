@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
 import { handleGenerateRecipe } from "@/app/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,17 +16,62 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { useRecipeStore } from "@/store/recipe-store";
 
-const availableIngredients = [
-  'Almonds', 'Avocado', 'Basil', 'Black Beans', 'Blueberries', 'Bread', 
-  'Broccoli', 'Butter', 'Carrots', 'Cayenne Pepper', 'Cheese', 'Chicken', 
-  'Chickpeas', 'Cilantro', 'Cinnamon', 'Corn', 'Cumin', 'Coriander', 
-  'Eggs', 'Fish', 'Flour', 'Garlic', 'Ginger', 'Honey', 'Kale', 
-  'Lemon', 'Lentils', 'Lime', 'Maple Syrup', 'Milk', 'Mushrooms', 'Mustard', 
-  'Oats', 'Olive Oil', 'Onions', 'Paprika', 'Pasta', 'Pork', 'Potatoes', 
-  'Quinoa', 'Rice', 'Salmon', 'Shrimp', 'Soy Sauce', 'Spinach', 'Strawberries', 
-  'Sugar', 'Sweet Potatoes', 'Tempeh', 'Tofu', 'Tomatoes', 'Walnuts', 'Yogurt', 
-  'Zucchini'
-].sort();
+const ingredientsData = [
+  { name: 'Almonds', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+  { name: 'Avocado', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Basil', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Black Beans', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+  { name: 'Blueberries', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Bread', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
+  { name: 'Broccoli', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Butter', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
+  { name: 'Carrots', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Cayenne Pepper', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Cheese', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+  { name: 'Chicken', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+  { name: 'Chickpeas', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+  { name: 'Cilantro', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Cinnamon', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Corn', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Cumin', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Coriander', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Eggs', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+  { name: 'Fish', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+  { name: 'Flour', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
+  { name: 'Garlic', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Ginger', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Honey', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
+  { name: 'Kale', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Lemon', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Lentils', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+  { name: 'Lime', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Maple Syrup', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Milk', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
+  { name: 'Mushrooms', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Mustard', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Oats', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false }, // Assuming gluten-free oats
+  { name: 'Olive Oil', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Onions', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Paprika', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Pasta', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
+  { name: 'Pork', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+  { name: 'Potatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Quinoa', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+  { name: 'Rice', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Salmon', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+  { name: 'Shrimp', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+  { name: 'Soy Sauce', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
+  { name: 'Spinach', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Strawberries', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Sugar', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Sweet Potatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Tempeh', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+  { name: 'Tofu', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+  { name: 'Tomatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+  { name: 'Walnuts', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+  { name: 'Yogurt', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+  { name: 'Zucchini', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false }
+].sort((a, b) => a.name.localeCompare(b.name));
 
 export function RecipeGenerator() {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>(['Chicken', 'Rice', 'Onions']);
@@ -42,6 +87,23 @@ export function RecipeGenerator() {
 
   const { toast } = useToast();
   const { addRecentRecipe } = useRecipeStore();
+  
+  const availableIngredients = useMemo(() => {
+    return ingredientsData.filter(ingredient => {
+      if (dietaryPreferences.vegetarian && !ingredient.isVegetarian) return false;
+      if (dietaryPreferences.vegan && !ingredient.isVegan) return false;
+      if (dietaryPreferences.glutenFree && !ingredient.isGlutenFree) return false;
+      if (dietaryPreferences.highProtein && !ingredient.isHighProtein) return false;
+      return true;
+    });
+  }, [dietaryPreferences]);
+
+  useEffect(() => {
+    // When available ingredients change, filter out any selected ingredients that are no longer available.
+    const availableNames = availableIngredients.map(i => i.name);
+    setSelectedIngredients(prev => prev.filter(name => availableNames.includes(name)));
+  }, [availableIngredients]);
+
 
   const handleIngredientToggle = (ingredient: string) => {
     setSelectedIngredients((prev) =>
@@ -91,7 +153,7 @@ export function RecipeGenerator() {
   };
 
   const filteredIngredients = availableIngredients.filter(ingredient =>
-    ingredient.toLowerCase().includes(searchTerm.toLowerCase())
+    ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -100,7 +162,7 @@ export function RecipeGenerator() {
           <Card className="bg-card/70">
             <CardHeader>
               <CardTitle className="font-headline text-2xl">1. Choose Your Ingredients</CardTitle>
-              <CardDescription>Select the items you have on hand or search for them.</CardDescription>
+              <CardDescription>Select the items you have on hand. The list will update based on your diet.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
@@ -116,13 +178,13 @@ export function RecipeGenerator() {
               <ScrollArea className="h-60 border rounded-md p-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {filteredIngredients.map((ingredient) => (
-                    <div key={ingredient} className="flex items-center space-x-2">
+                    <div key={ingredient.name} className="flex items-center space-x-2">
                       <Checkbox
-                        id={ingredient}
-                        checked={selectedIngredients.includes(ingredient)}
-                        onCheckedChange={() => handleIngredientToggle(ingredient)}
+                        id={ingredient.name}
+                        checked={selectedIngredients.includes(ingredient.name)}
+                        onCheckedChange={() => handleIngredientToggle(ingredient.name)}
                       />
-                      <Label htmlFor={ingredient} className="cursor-pointer text-sm font-normal">{ingredient}</Label>
+                      <Label htmlFor={ingredient.name} className="cursor-pointer text-sm font-normal">{ingredient.name}</Label>
                     </div>
                   ))}
                 </div>
