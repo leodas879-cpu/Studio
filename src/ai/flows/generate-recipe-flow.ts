@@ -57,7 +57,7 @@ export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
 
 const GenerateRecipeOutputSchema = z.object({
   recipeName: z.string().describe('The name of the generated recipe.'),
-  steps: z.array(z.string()).describe('A list of steps to prepare the recipe.'),
+  steps: z.array(z.string()).describe('A list of detailed, step-by-step instructions to prepare the recipe. Each step should be very descriptive, explaining the what, how, and why. Mention expected colors, textures, and cooking times.'),
   requiredIngredients: z.array(z.string()).describe('A list of ingredients required for the recipe.'),
   alternativeSuggestions: z.array(z.string()).describe('Alternative suggestions for the recipe, e.g., substitutions.'),
 });
@@ -72,11 +72,13 @@ const generateRecipePrompt = ai.definePrompt({
   input: {schema: GenerateRecipeInputSchema},
   output: {schema: GenerateRecipeOutputSchema},
   tools: [getRecipeFromMealDBTool],
-  prompt: `You are a world-class chef. Use the getRecipeFromMealDB tool to find a recipe based on the provided ingredients. 
+  prompt: `You are a world-class chef who specializes in writing clear, detailed, and easy-to-follow recipes for home cooks. Use the getRecipeFromMealDB tool to find a base recipe.
   
-If the tool returns a recipe, adapt it to meet the user's dietary preferences ({{vegetarian}}, {{vegan}}, {{glutenFree}}, {{highProtein}}). Extract the recipe name, create a list of required ingredients with their measurements, and format the instructions into clear steps. Also, provide alternative suggestions.
+If the tool returns a recipe, adapt it to meet the user's dietary preferences ({{vegetarian}}, {{vegan}}, {{glutenFree}}, {{highProtein}}). Extract the recipe name, create a list of required ingredients with their measurements, and then write a new set of very detailed, step-by-step cooking instructions.
 
 If the tool does not find a suitable recipe, generate a new one from scratch based on all the provided ingredients and dietary preferences.
+
+When creating the steps, be extremely detailed. Explain not just what to do, but how to do it. For example, instead of "cook onions", write "Sauté the chopped onions in olive oil over medium heat for 5-7 minutes, stirring occasionally, until they become translucent and fragrant." Mention specific timings, temperatures, and visual cues.
 
 Ingredients: {{ingredients}}
 Vegetarian: {{vegetarian}}
