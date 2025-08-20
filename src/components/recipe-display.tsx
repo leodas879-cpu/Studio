@@ -5,16 +5,21 @@ import { UtensilsCrossed, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
-import { useRecipeStore } from "@/store/recipe-store";
+import { useRecipeStore, type Recipe } from "@/store/recipe-store";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface RecipeDisplayProps {
-  recipe: GenerateRecipeOutput | null;
+  recipe: Recipe | null;
   isLoading: boolean;
 }
 
 export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
   const { favoriteRecipes, toggleFavorite } = useRecipeStore();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   if (isLoading) {
     return <RecipeSkeleton />;
@@ -33,6 +38,19 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
   }
 
   const isFavorite = favoriteRecipes.some(r => r.recipeName === recipe.recipeName);
+  
+  const handleToggleFavorite = async () => {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Not Logged In",
+            description: "You need to be logged in to save favorite recipes.",
+        });
+        return;
+    }
+    await toggleFavorite(recipe, user.uid);
+  }
+
 
   return (
     <Card className="h-full overflow-auto animate-in fade-in-50 duration-500 shadow-lg flex flex-col">
@@ -79,7 +97,7 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
         <Button 
           variant="ghost" 
           size="lg" 
-          onClick={() => toggleFavorite(recipe)} 
+          onClick={handleToggleFavorite} 
           className="w-full text-lg"
         >
           <Heart className={cn("mr-2", isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground")} />

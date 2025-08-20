@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
+import type { Recipe } from "@/store/recipe-store";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "./ui/button";
 import { Heart, ArrowRight, Vegan, Beef, WheatOff } from "lucide-react";
@@ -10,23 +10,30 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Badge } from "./ui/badge";
 import Image from "next/image";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
-interface RecipeCardProps {
-    recipe: GenerateRecipeOutput & { vegetarian?: boolean, vegan?: boolean, glutenFree?: boolean };
-}
 
-const DietInfo = ({ icon: Icon, label }: { icon: React.ElementType, label: string }) => (
-  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-    <Icon className="w-4 h-4 text-primary" />
-    <span>{label}</span>
-  </div>
-);
-
-export function RecipeCard({ recipe }: RecipeCardProps) {
+export function RecipeCard({ recipe }: { recipe: Recipe }) {
+    const { user } = useAuth();
+    const { toast } = useToast();
     const { favoriteRecipes, toggleFavorite } = useRecipeStore();
     const isFavorite = favoriteRecipes.some(r => r.recipeName === recipe.recipeName);
 
     const description = recipe.steps.length > 0 ? `${recipe.steps[0].substring(0, 100)}...` : 'No instructions available.';
+    
+    const handleToggleFavorite = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!user) {
+            toast({
+                variant: "destructive",
+                title: "Not Logged In",
+                description: "You need to be logged in to save favorite recipes.",
+            });
+            return;
+        }
+        await toggleFavorite(recipe, user.uid);
+    }
 
     return (
         <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden rounded-xl border">
@@ -42,10 +49,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                  <Button 
                     variant="ghost" 
                     size="icon" 
-                    onClick={(e) => {
-                        e.preventDefault();
-                        toggleFavorite(recipe);
-                    }}
+                    onClick={handleToggleFavorite}
                     className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full text-muted-foreground hover:text-red-500"
                 >
                     <Heart className={cn("w-6 h-6 transition-all", isFavorite ? "fill-red-500 text-red-500" : "")} />
@@ -58,17 +62,17 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
             
             <CardContent className="flex-1 space-y-4">
                 <p className="text-muted-foreground text-sm">{description}</p>
-                <div className="flex flex-wrap gap-4">
-                    {recipe.vegetarian && <DietInfo icon={Beef} label="Vegetarian" />}
-                    {recipe.vegan && <DietInfo icon={Vegan} label="Vegan" />}
-                    {recipe.glutenFree && <DietInfo icon={WheatOff} label="Gluten-Free" />}
-                </div>
             </CardContent>
 
-            <CardFooter className="flex justify-end items-center border-t p-4 bg-muted/30">
+            <CardFooter className="flex justify-between items-center border-t p-4 bg-muted/30">
+                <div className="flex flex-wrap gap-2">
+                    {recipe.vegetarian && <Badge variant="outline">Vegetarian</Badge>}
+                    {recipe.vegan && <Badge variant="outline">Vegan</Badge>}
+                    {recipe.glutenFree && <Badge variant="outline">Gluten-Free</Badge>}
+                </div>
                 <Link href={`/full-recipe-view?recipe=${encodeURIComponent(recipe.recipeName)}`} passHref>
-                    <Button>
-                        View Full Recipe <ArrowRight className="ml-2"/>
+                    <Button variant="ghost">
+                        View <ArrowRight className="ml-2"/>
                     </Button>
                 </Link>
             </CardFooter>

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MobileHeader } from '@/components/mobile-header';
+import { useRecipeStore } from '@/store/recipe-store';
 
 export default function DashboardLayout({
   children,
@@ -15,13 +16,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading } = useAuth();
+  const { loadRecipes } = useRecipeStore();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+    if (!loading && user) {
+      loadRecipes(user.uid);
+    }
+  }, [user, loading, router, loadRecipes]);
 
   if (loading) {
     return (

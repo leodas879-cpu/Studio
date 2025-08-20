@@ -4,8 +4,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, updateProfile, updateEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { getUserProfile, createUserProfile } from '@/services/profile-service';
+import { getUserProfile, createUserProfile, saveUserProfile } from '@/services/profile-service';
 import { useProfileStore, type Profile } from '@/store/profile-store';
+import { useRecipeStore } from '@/store/recipe-store';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { setProfile, profile } = useProfileStore();
+  const { clearRecipes } = useRecipeStore();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -33,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           let userProfile = await getUserProfile(user.uid);
           if (!userProfile) {
-            const newProfileData = {
+            const newProfileData: Profile = {
                 firstName: user.displayName?.split(' ')[0] || '',
                 lastName: user.displayName?.split(' ')[1] || '',
                 email: user.email || '',
@@ -54,11 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile({
             username: "", email: "", firstName: "", lastName: "", phone: "", bio: "", profilePhoto: ""
         });
+        clearRecipes();
       }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [setProfile]);
+  }, [setProfile, clearRecipes]);
 
   const login = (email: string, pass: string) => {
     return signInWithEmailAndPassword(auth, email, pass);
@@ -67,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (email: string, pass: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const user = userCredential.user;
-    const profileData = {
+    const profileData: Profile = {
         email,
         firstName: '',
         lastName: '',
@@ -93,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check if user profile already exists, if not, create one
     const existingProfile = await getUserProfile(user.uid);
     if (!existingProfile) {
-        const profileData = {
+        const profileData: Profile = {
             email: user.email || '',
             firstName: user.displayName?.split(' ')[0] || '',
             lastName: user.displayName?.split(' ')[1] || '',
@@ -104,6 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         await createUserProfile(user.uid, profileData);
         setProfile(profileData);
+    } else {
+        setProfile(existingProfile);
     }
     return result;
   }
@@ -112,11 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return sendPasswordResetEmail(auth, email);
   }
 
-  const updateUserEmail = async (email: string) => {
+  const updateUserEmail = async (newEmail: string) => {
     if (auth.currentUser) {
-        await updateEmail(auth.currentUser, email);
+        await updateEmail(auth.currentUser, newEmail);
         // Also update the email in our database
-        await getUserProfile(auth.currentUser.uid); // re-fetch to sync
+        await saveUserProfile(auth.currentUser.uid, { ...profile, email: newEmail });
     } else {
         throw new Error("No user is currently signed in.");
     }
