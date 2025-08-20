@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MobileHeader } from '@/components/mobile-header';
 
 export default function DashboardLayout({
   children,
@@ -25,10 +26,12 @@ export default function DashboardLayout({
   if (loading) {
     return (
         <div className="flex min-h-screen">
-            <Skeleton className="w-64 h-screen" />
+            <div className="hidden md:flex md:w-64 md:flex-col">
+                <Skeleton className="w-full h-screen" />
+            </div>
             <div className="flex-1 flex flex-col">
                 <Skeleton className="h-16" />
-                <div className="flex-1 p-8">
+                <div className="flex-1 p-4 md:p-8">
                     <Skeleton className="w-full h-full rounded-lg" />
                 </div>
             </div>
@@ -42,10 +45,17 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      <div className="hidden md:flex md:flex-shrink-0">
+        <Sidebar />
+      </div>
       <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="flex-1 bg-background text-foreground p-8">
+        <div className="md:hidden">
+            <MobileHeader />
+        </div>
+        <div className="hidden md:block">
+            <Header />
+        </div>
+        <main className="flex-1 bg-background text-foreground p-4 md:p-8">
           {children}
         </main>
       </div>
