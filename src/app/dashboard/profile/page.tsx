@@ -21,6 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/use-auth";
 import { format, subDays } from 'date-fns';
+import { useRecipeStore } from "@/store/recipe-store";
 
 const cuisines = [
   "Italian", "Mexican", "Chinese", "Indian", "Japanese", "Thai", "French", "Spanish", "Greek", "American"
@@ -80,6 +81,7 @@ const activityLogData = [
 
 export default function Profile() {
   const { profile, setProfile } = useProfileStore();
+  const { recentRecipes, favoriteRecipes } = useRecipeStore();
   const [localProfile, setLocalProfile] = useState(profile);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
@@ -297,12 +299,12 @@ export default function Profile() {
                 <CardContent className="grid grid-cols-3 gap-4 text-center">
                   <div className="p-2 rounded-lg bg-accent/50">
                     <ChefHat className="mx-auto w-8 h-8 text-primary"/>
-                    <p className="text-2xl font-bold">127</p>
+                    <p className="text-2xl font-bold">{recentRecipes.length}</p>
                     <p className="text-xs text-muted-foreground">Recipes Generated</p>
                   </div>
                   <div className="p-2 rounded-lg bg-accent/50">
                     <Heart className="mx-auto w-8 h-8 text-destructive"/>
-                    <p className="text-2xl font-bold">23</p>
+                    <p className="text-2xl font-bold">{favoriteRecipes.length}</p>
                     <p className="text-xs text-muted-foreground">Favorites Saved</p>
                   </div>
                    <div className="p-2 rounded-lg bg-accent/50">
