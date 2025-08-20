@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, updateProfile, updateEmail } from 'firebase/auth';
+import { onAuthStateChanged, User, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, updateProfile, updateEmail, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserProfile, createUserProfile, saveUserProfile } from '@/services/profile-service';
 import { useProfileStore, type Profile } from '@/store/profile-store';
@@ -16,6 +16,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<any>;
   sendPasswordReset: (email: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   updateUserEmail: (email: string) => Promise<void>;
   updateUserProfile: (profileData: Partial<Profile>) => Promise<void>;
 }
@@ -117,6 +118,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return sendPasswordResetEmail(auth, email);
   }
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    const user = auth.currentUser;
+    if (user && user.email) {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      // Re-authenticate the user
+      await reauthenticateWithCredential(user, credential);
+      // Now update the password
+      await updatePassword(user, newPassword);
+    } else {
+      throw new Error("No user is currently signed in or user has no email.");
+    }
+  }
+
   const updateUserEmail = async (newEmail: string) => {
     if (auth.currentUser) {
         await updateEmail(auth.currentUser, newEmail);
@@ -138,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
   }
 
-  const value = { user, loading, login, signup, logout, loginWithGoogle, sendPasswordReset, updateUserEmail, updateUserProfile };
+  const value = { user, loading, login, signup, logout, loginWithGoogle, sendPasswordReset, changePassword, updateUserEmail, updateUserProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -150,3 +164,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

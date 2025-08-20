@@ -16,6 +16,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 
 const SettingsSection = ({ icon: Icon, title, description, children }: { icon: React.ElementType, title: string, description: string, children: React.ReactNode }) => (
@@ -57,10 +60,15 @@ const SettingsInfo = ({ title, description }: { title: string, description?: str
 
 export default function Settings() {
     const { theme, setTheme } = useTheme();
-    const { user, logout, sendPasswordReset } = useAuth();
+    const { user, logout, changePassword } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
     const [isDarkMode, setIsDarkMode] = useState(theme === 'dark');
+
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
 
     const handleThemeChange = (checked: boolean) => {
         setIsDarkMode(checked);
@@ -72,16 +80,25 @@ export default function Settings() {
         router.push("/");
     };
 
-    const handlePasswordReset = async () => {
-        if (!user?.email) {
-            toast({ variant: "destructive", title: "Error", description: "No email address found for this user." });
+    const handlePasswordChange = async () => {
+        if (newPassword !== confirmPassword) {
+            toast({ variant: "destructive", title: "Error", description: "New passwords do not match." });
             return;
         }
+        if (!currentPassword || !newPassword) {
+            toast({ variant: "destructive", title: "Error", description: "Please fill in all password fields." });
+            return;
+        }
+
         try {
-            await sendPasswordReset(user.email);
-            toast({ title: "Password Reset Email Sent", description: `A reset link has been sent to ${user.email}.` });
+            await changePassword(currentPassword, newPassword);
+            toast({ title: "Success", description: "Your password has been changed successfully." });
+            setIsPasswordChangeOpen(false);
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Error", description: error.message });
+            toast({ variant: "destructive", title: "Error changing password", description: error.message });
         }
     };
 
@@ -100,7 +117,39 @@ export default function Settings() {
                 <div className="space-y-4">
                     <SettingsRow>
                         <SettingsInfo title="Change Password" description="Update your account password for better security" />
-                        <Button variant="outline" onClick={handlePasswordReset}><KeyRound className="mr-2" />Change</Button>
+                        <Dialog open={isPasswordChangeOpen} onOpenChange={setIsPasswordChangeOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline"><KeyRound className="mr-2" />Change</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Change Your Password</DialogTitle>
+                                    <DialogDescription>
+                                        Enter your current password and a new password below.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="current-password">Current Password</Label>
+                                        <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="new-password">New Password</Label>
+                                        <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                                        <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button variant="outline">Cancel</Button>
+                                    </DialogClose>
+                                    <Button onClick={handlePasswordChange}>Save Changes</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </SettingsRow>
                     <Separator />
                     <SettingsRow>
