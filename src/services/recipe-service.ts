@@ -1,29 +1,50 @@
 
 'use server';
 
-import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { createClient } from '@/lib/supabase/server';
 import type { GenerateRecipeOutput } from '@/ai/flows/generate-recipe-flow';
 
-const USERS_COLLECTION = 'users';
-const RECIPES_COLLECTION = 'recipes';
-
 export async function saveRecipe(uid: string, recipe: GenerateRecipeOutput & { isFavorite?: boolean }) {
-  const recipeRef = doc(db, USERS_COLLECTION, uid, RECIPES_COLLECTION, recipe.recipeName);
-  await setDoc(recipeRef, { ...recipe, isFavorite: true }, { merge: true });
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('recipes')
+    .upsert({ 
+        user_id: uid, 
+        recipe_name: recipe.recipeName, 
+        recipe_data: recipe,
+        is_favorite: true,
+    }, { onConflict: 'user_id, recipe_name' });
+  
+  if (error) {
+    console.error('Error saving recipe:', error);
+  }
 }
 
 export async function removeRecipe(uid: string, recipeName: string) {
-  const recipeRef = doc(db, USERS_COLLECTION, uid, RECIPES_COLLECTION, recipeName);
-  await deleteDoc(recipeRef);
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('recipes')
+    .delete()
+    .eq('user_id', uid)
+    .eq('recipe_name', recipeName);
+
+  if (error) {
+    console.error('Error removing recipe:', error);
+  }
 }
 
 export async function getRecipes(uid: string): Promise<(GenerateRecipeOutput & { isFavorite?: boolean })[]> {
-  const recipesRef = collection(db, USERS_COLLECTION, uid, RECIPES_COLLECTION);
-  const querySnapshot = await getDocs(recipesRef);
-  const recipes: (GenerateRecipeOutput & { isFavorite?: boolean })[] = [];
-  querySnapshot.forEach((doc) => {
-    recipes.push(doc.data() as GenerateRecipeOutput & { isFavorite?: boolean });
-  });
-  return recipes;
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('recipes')
+        .select('recipe_data')
+        .eq('user_id', uid)
+        .eq('is_favorite', true);
+
+    if (error) {
+        console.error('Error getting recipes:', error);
+        return [];
+    }
+
+    return data.map(item => item.recipe_data) as (GenerateRecipeOutput & { isFavorite?: boolean })[];
 }

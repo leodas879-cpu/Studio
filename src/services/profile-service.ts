@@ -1,30 +1,49 @@
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+
+'use server'
+
+import { createClient } from "@/lib/supabase/server";
 import type { Profile } from '@/store/profile-store';
 
-const USERS_COLLECTION = 'users';
-
 export async function getUserProfile(uid: string): Promise<Profile | null> {
-  const docRef = doc(db, USERS_COLLECTION, uid);
-  const docSnap = await getDoc(docRef);
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', uid)
+    .single();
 
-  if (docSnap.exists()) {
-    return docSnap.data() as Profile;
-  } else {
-    console.log("No such document!");
+  if (error && error.code !== 'PGRST116') { // PGRST116: "object not found"
+    console.error('Error fetching profile:', error);
     return null;
   }
+  
+  return data as Profile | null;
 }
 
 export async function createUserProfile(uid: string, profileData: Partial<Profile>) {
-    const docRef = doc(db, USERS_COLLECTION, uid);
-    await setDoc(docRef, profileData);
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('profiles')
+        .insert([{ id: uid, ...profileData }])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating profile:', error);
+    }
+    return data;
 }
 
 
 export async function saveUserProfile(uid: string, profileData: Profile) {
-  const docRef = doc(db, USERS_COLLECTION, uid);
-  await updateDoc(docRef, {
-      ...profileData
-  });
+  const supabase = createClient();
+  const { id, ...updateData } = profileData;
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('id', uid);
+    
+   if (error) {
+     console.error('Error saving profile:', error)
+   }
 }

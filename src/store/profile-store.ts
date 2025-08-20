@@ -1,6 +1,8 @@
+
 import { create } from 'zustand';
 
 export interface Profile {
+  id: string;
   username: string;
   email: string;
   firstName: string;
@@ -17,6 +19,7 @@ interface ProfileStore {
 
 export const useProfileStore = create<ProfileStore>((set) => ({
   profile: {
+    id: "",
     username: "",
     email: "",
     firstName: "",

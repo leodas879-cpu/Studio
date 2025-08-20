@@ -177,9 +177,9 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
       // Update Firestore
-      await saveUserProfile(user.uid, localProfile);
+      await saveUserProfile(user.id, localProfile);
 
-      // Update Firebase Auth if necessary
+      // Update Supabase Auth if necessary
       if (profile.email !== localProfile.email) {
           await updateUserEmail(localProfile.email);
       }
@@ -542,7 +542,7 @@ export default function ProfilePage() {
                     <Clock className="w-8 h-8 text-muted-foreground mt-1"/>
                     <div>
                         <p className="font-semibold">Last Login</p>
-                        <p className="text-muted-foreground text-sm">{user?.metadata.lastSignInTime ? format(new Date(user.metadata.lastSignInTime), 'MMM d, yyyy, p') : 'N/A'}</p>
+                        <p className="text-muted-foreground text-sm">{user?.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'MMM d, yyyy, p') : 'N/A'}</p>
                         <p className="text-muted-foreground text-sm">San Francisco, CA</p>
                     </div>
                 </div>
@@ -607,7 +607,7 @@ export default function ProfilePage() {
                     </div>
                      <div className="flex items-start gap-2">
                         <CheckCircle className="w-5 h-5 text-green-600 mt-0.5"/>
-                        <p className="text-sm text-muted-foreground">Regularly review and remove unused connected devices</p>
+                        <p className="text-sm text-muted-foreground">Regularly review and unused connected devices</p>
                     </div>
                  </div>
               </div>

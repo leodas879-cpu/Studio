@@ -23,42 +23,28 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      await login(email, password);
-      toast({
-        title: "Login Successful!",
-        description: "Welcome back to ChefAI.",
-      });
-      router.push("/dashboard");
-    } catch (error: any) {
-      toast({
+    const { error } = await login(email, password);
+    
+    if (error) {
+       toast({
         variant: "destructive",
         title: "Login Failed",
         description: error.message,
       });
-    } finally {
-      setLoading(false);
+    } else {
+       toast({
+        title: "Login Successful!",
+        description: "Welcome back to ChefAI.",
+      });
+      router.push("/dashboard");
     }
+    setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    try {
-      await loginWithGoogle();
-      toast({
-        title: "Login Successful!",
-        description: "Welcome to ChefAI.",
-      });
-      router.push("/dashboard");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Google Login Failed",
-        description: error.message,
-      });
-    } finally {
-        setLoading(false);
-    }
+    await loginWithGoogle();
+    setLoading(false);
   }
 
   return (
