@@ -17,60 +17,104 @@ import { Input } from "@/components/ui/input";
 import { useRecipeStore } from "@/store/recipe-store";
 
 const ingredientsData = [
-  { name: 'Almonds', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
-  { name: 'Avocado', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Basil', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Black Beans', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
-  { name: 'Blueberries', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Bread', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
-  { name: 'Broccoli', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Butter', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
-  { name: 'Carrots', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Cayenne Pepper', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Cheese', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
-  { name: 'Chicken', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
-  { name: 'Chickpeas', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
-  { name: 'Cilantro', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Cinnamon', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Corn', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Cumin', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Coriander', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Eggs', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
-  { name: 'Fish', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
-  { name: 'Flour', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
-  { name: 'Garlic', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Ginger', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Honey', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
-  { name: 'Kale', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Lemon', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Lentils', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
-  { name: 'Lime', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Maple Syrup', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Milk', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
-  { name: 'Mushrooms', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Mustard', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Oats', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false }, // Assuming gluten-free oats
-  { name: 'Olive Oil', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Onions', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Paprika', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Pasta', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
-  { name: 'Pork', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
-  { name: 'Potatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Quinoa', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
-  { name: 'Rice', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Salmon', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
-  { name: 'Shrimp', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
-  { name: 'Soy Sauce', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
-  { name: 'Spinach', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Strawberries', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Sugar', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Sweet Potatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Tempeh', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
-  { name: 'Tofu', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
-  { name: 'Tomatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
-  { name: 'Walnuts', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
-  { name: 'Yogurt', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
-  { name: 'Zucchini', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false }
+    // Meats & Seafood (Not Vegetarian/Vegan)
+    { name: 'Chicken', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Pork', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Beef', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Fish', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Shrimp', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Turkey', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    
+    // Dairy & Eggs (Vegetarian, Not Vegan)
+    { name: 'Eggs', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Milk', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Cheese', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Yogurt', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Greek Yogurt', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+    { name: 'Butter', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
+    { name: 'Cream', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
+    { name: 'Cottage Cheese', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: true },
+
+    // Plant-Based Proteins (Vegetarian, Vegan)
+    { name: 'Tofu', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Tempeh', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Lentils', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Chickpeas', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Black Beans', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Kidney Beans', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Edamame', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Seitan', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: true }, // Contains gluten
+
+    // Grains & Flours
+    { name: 'Quinoa', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Rice', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Brown Rice', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Oats', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false }, // Often processed with wheat, but naturally GF
+    { name: 'Pasta', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
+    { name: 'Bread', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
+    { name: 'Flour', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
+    { name: 'Corn', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Almond Flour', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Coconut Flour', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    
+    // Vegetables
+    { name: 'Mushrooms', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true }, // High protein for a vegetable
+    { name: 'Spinach', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Kale', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Broccoli', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Carrots', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Potatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Sweet Potatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Tomatoes', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Onions', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Garlic', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Bell Peppers', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Zucchini', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Avocado', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Cabbage', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Cauliflower', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Peas', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+
+    // Fruits
+    { name: 'Lemon', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Lime', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Blueberries', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Strawberries', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+
+    // Nuts & Seeds
+    { name: 'Almonds', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Walnuts', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Cashews', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Peanuts', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Chia Seeds', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Flax Seeds', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Pumpkin Seeds', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Sunflower Seeds', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+
+    // Oils, Sweeteners, & Condiments
+    { name: 'Olive Oil', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Honey', isVegetarian: true, isVegan: false, isGlutenFree: true, isHighProtein: false },
+    { name: 'Maple Syrup', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Sugar', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Soy Sauce', isVegetarian: true, isVegan: true, isGlutenFree: false, isHighProtein: false },
+    { name: 'Mustard', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Peanut Butter', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    
+    // Plant-Based Milks
+    { name: 'Almond Milk', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Soy Milk', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true },
+    { name: 'Coconut Milk', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    
+    // Herbs & Spices
+    { name: 'Basil', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Cilantro', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Cinnamon', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Cumin', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Paprika', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Cayenne Pepper', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Ginger', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+    { name: 'Coriander', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
+
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export function RecipeGenerator() {
@@ -93,15 +137,17 @@ export function RecipeGenerator() {
       if (dietaryPreferences.vegetarian && !ingredient.isVegetarian) return false;
       if (dietaryPreferences.vegan && !ingredient.isVegan) return false;
       if (dietaryPreferences.glutenFree && !ingredient.isGlutenFree) return false;
-      if (dietaryPreferences.highProtein && !ingredient.isHighProtein) return false;
+      // Note: High protein is not a restrictive filter, so we don't filter out items based on it.
+      // We could potentially use it to rank or highlight ingredients in the future.
       return true;
     });
   }, [dietaryPreferences]);
 
   useEffect(() => {
-    // When available ingredients change, filter out any selected ingredients that are no longer available.
-    const availableNames = availableIngredients.map(i => i.name);
-    setSelectedIngredients(prev => prev.filter(name => availableNames.includes(name)));
+    // When available ingredients change due to filter toggles, 
+    // filter out any selected ingredients that are no longer available.
+    const availableNames = new Set(availableIngredients.map(i => i.name));
+    setSelectedIngredients(prev => prev.filter(name => availableNames.has(name)));
   }, [availableIngredients]);
 
 
@@ -145,8 +191,9 @@ export function RecipeGenerator() {
       });
       setGeneratedRecipe(null);
     } else if (result.data) {
-      setGeneratedRecipe(result.data);
-      addRecentRecipe(result.data);
+      const recipeWithPrefs = { ...result.data, ...dietaryPreferences };
+      setGeneratedRecipe(recipeWithPrefs);
+      addRecentRecipe(recipeWithPrefs);
     }
     
     setIsLoading(false);
