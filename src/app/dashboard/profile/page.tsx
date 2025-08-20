@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -18,6 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/hooks/use-auth";
+import { format, subDays } from 'date-fns';
 
 const cuisines = [
   "Italian", "Mexican", "Chinese", "Indian", "Japanese", "Thai", "French", "Spanish", "Greek", "American"
@@ -34,19 +37,19 @@ const dietaryRestrictions = [
     { id: "highProtein", label: "High Protein", description: "" },
 ];
 
-const connectedDevices = [
+const initialConnectedDevices = [
     { icon: Laptop, name: "MacBook Pro", location: "San Francisco, CA", lastActive: "Jan 22, 2025, 04:45 PM", isCurrent: true },
     { icon: Smartphone, name: "iPhone 15", location: "San Francisco, CA", lastActive: "Jan 22, 2025, 03:20 PM", isCurrent: false },
     { icon: Tablet, name: "iPad Air", location: "San Francisco, CA", lastActive: "Jan 21, 2025, 07:30 PM", isCurrent: false },
 ]
 
-const activityLog = [
+const activityLogData = [
     {
         icon: ChefHat,
         title: "Generated Creamy Mushroom Risotto",
         description: "Used ingredients: mushrooms, arborio rice, parmesan, white wine",
         category: "Recipe Generated",
-        date: "Jan 22",
+        date: new Date(),
         color: "text-green-600"
     },
     {
@@ -54,7 +57,7 @@ const activityLog = [
         title: "Added Spicy Thai Basil Chicken to favorites",
         description: "Saved for quick access in your recipe collection",
         category: "Recipe Favorited",
-        date: "Jan 22",
+        date: new Date(),
         color: "text-red-500"
     },
     {
@@ -62,7 +65,7 @@ const activityLog = [
         title: "Cooked Mediterranean Quinoa Bowl",
         description: "Rated 5 stars and left a review",
         category: "Recipe Cooked",
-        date: "Jan 21",
+        date: subDays(new Date(), 1),
         color: "text-yellow-500"
     },
     {
@@ -70,7 +73,7 @@ const activityLog = [
         title: "Updated cooking preferences",
         description: "Changed skill level to intermediate and added dietary restrictions",
         category: "Profile Updated",
-        date: "Jan 21",
+        date: subDays(new Date(), 1),
         color: "text-blue-500"
     },
 ];
@@ -90,7 +93,9 @@ export default function Profile() {
   const [servingSize, setServingSize] = useState("2-4 People");
   const [favoriteCuisine, setFavoriteCuisine] = useState("");
   const [restrictions, setRestrictions] = useState<string[]>([]);
+  const [connectedDevices, setConnectedDevices] = useState(initialConnectedDevices);
 
+  const { user, sendPasswordReset } = useAuth();
   const { toast } = useToast();
   
   useEffect(() => {
@@ -129,6 +134,26 @@ export default function Profile() {
     }
   }, [isCameraOpen]);
 
+  const handlePasswordReset = async () => {
+    if (!user?.email) {
+        toast({ variant: "destructive", title: "Error", description: "No email address found for this user." });
+        return;
+    }
+    try {
+        await sendPasswordReset(user.email);
+        toast({ title: "Password Reset Email Sent", description: `A reset link has been sent to ${user.email}.` });
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: error.message });
+    }
+  };
+
+  const handleDeviceRemove = (deviceName: string) => {
+    setConnectedDevices(prev => prev.filter(device => device.name !== deviceName));
+    toast({
+        title: "Device Removed",
+        description: `${deviceName} has been signed out.`,
+    })
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -185,6 +210,17 @@ export default function Profile() {
     setRestrictions(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
   };
 
+  const formatActivityDate = (date: Date) => {
+    const today = new Date();
+    const yesterday = subDays(today, 1);
+    if (format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
+        return `Today at ${format(date, 'p')}`;
+    }
+    if (format(date, 'yyyy-MM-dd') === format(yesterday, 'yyyy-MM-dd')) {
+        return `Yesterday at ${format(date, 'p')}`;
+    }
+    return format(date, 'MMM d, yyyy');
+  };
 
   return (
     <div className="space-y-8">
@@ -308,7 +344,7 @@ export default function Profile() {
                   </div>
                    <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" name="email" type="email" value={localProfile.email} onChange={handleInputChange} />
+                    <Input id="email" name="email" type="email" value={localProfile.email} onChange={handleInputChange} disabled />
                     <p className="text-sm text-muted-foreground">Used for account notifications and password recovery</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -469,7 +505,7 @@ export default function Profile() {
                     <HelpCircle className="w-8 h-8 text-muted-foreground mt-1"/>
                     <div>
                         <p className="font-semibold">Connected Devices</p>
-                        <p className="text-muted-foreground text-sm">3 active devices</p>
+                        <p className="text-muted-foreground text-sm">{connectedDevices.length} active devices</p>
                     </div>
                 </div>
               </div>
@@ -477,7 +513,7 @@ export default function Profile() {
               <div>
                 <Label className="text-base font-semibold flex items-center gap-2"><KeyRound/>Password & Authentication</Label>
                 <div className="mt-4 flex flex-col sm:flex-row gap-4">
-                    <Button variant="outline">Change Password</Button>
+                    <Button variant="outline" onClick={handlePasswordReset}>Change Password</Button>
                     <RadioGroup defaultValue="disable-2fa" className="flex items-center gap-4">
                        <div className="flex items-center space-x-2">
                         <RadioGroupItem value="enable-2fa" id="enable-2fa" />
@@ -503,9 +539,11 @@ export default function Profile() {
                                     <p className="text-sm text-muted-foreground">{device.location} • Last active {device.lastActive}</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                                <X className="w-5 h-5"/>
-                            </Button>
+                            {!device.isCurrent && (
+                              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeviceRemove(device.name)}>
+                                  <X className="w-5 h-5"/>
+                              </Button>
+                            )}
                         </div>
                     ))}
                  </div>
@@ -544,7 +582,7 @@ export default function Profile() {
             <CardContent>
               <ScrollArea className="h-96">
                 <div className="space-y-4">
-                  {activityLog.map((item, index) => (
+                  {activityLogData.map((item, index) => (
                     <div key={index}>
                       <div className="flex items-start gap-4">
                         <div className={`mt-1 rounded-full p-2 bg-accent/50 ${item.color}`}>
@@ -554,14 +592,14 @@ export default function Profile() {
                           <p className="font-semibold">{item.title}</p>
                           <p className="text-sm text-muted-foreground">{item.description}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {item.category} &bull; {item.date}
+                            {item.category} &bull; {formatActivityDate(item.date)}
                           </p>
                         </div>
                         <Button variant="ghost" size="icon" className="self-center">
                             <ChevronRight className="w-5 h-5 text-muted-foreground"/>
                         </Button>
                       </div>
-                      {index < activityLog.length - 1 && <Separator className="my-4" />}
+                      {index < activityLogData.length - 1 && <Separator className="my-4" />}
                     </div>
                   ))}
                 </div>
@@ -710,3 +748,5 @@ export default function Profile() {
     </div>
   );
 }
+
+    
