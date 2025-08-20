@@ -13,7 +13,7 @@ import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart,
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useProfileStore } from "@/store/profile-store";
+import { useProfileStore, Profile } from "@/store/profile-store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -22,6 +22,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/use-auth";
 import { format, subDays } from 'date-fns';
 import { useRecipeStore } from "@/store/recipe-store";
+import { saveUserProfile } from "@/services/profile-service";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const cuisines = [
   "Italian", "Mexican", "Chinese", "Indian", "Japanese", "Thai", "French", "Spanish", "Greek", "American"
@@ -79,10 +81,15 @@ const activityLogData = [
     },
 ];
 
-export default function Profile() {
+export default function ProfilePage() {
   const { profile, setProfile } = useProfileStore();
   const { recentRecipes, favoriteRecipes } = useRecipeStore();
-  const [localProfile, setLocalProfile] = useState(profile);
+  const { user, sendPasswordReset, loading: authLoading, updateUserEmail, updateUserProfile } = useAuth();
+  const { toast } = useToast();
+
+  const [localProfile, setLocalProfile] = useState<Profile>(profile);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -97,11 +104,10 @@ export default function Profile() {
   const [restrictions, setRestrictions] = useState<string[]>([]);
   const [connectedDevices, setConnectedDevices] = useState(initialConnectedDevices);
 
-  const { user, sendPasswordReset } = useAuth();
-  const { toast } = useToast();
-  
   useEffect(() => {
-    setLocalProfile(profile);
+    if (profile) {
+      setLocalProfile(profile);
+    }
   }, [profile]);
 
   useEffect(() => {
@@ -162,12 +168,45 @@ export default function Profile() {
     setLocalProfile(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSaveChanges = () => {
-    setProfile(localProfile);
-    toast({
-      title: "Profile Saved!",
-      description: "Your changes have been successfully saved.",
-    });
+  const handleSaveChanges = async () => {
+    if (!user) {
+      toast({ variant: "destructive", title: "Error", description: "You must be logged in to save your profile." });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Update Firestore
+      await saveUserProfile(user.uid, localProfile);
+
+      // Update Firebase Auth if necessary
+      if (profile.email !== localProfile.email) {
+          await updateUserEmail(localProfile.email);
+      }
+      if (profile.firstName !== localProfile.firstName || profile.lastName !== localProfile.lastName || profile.profilePhoto !== localProfile.profilePhoto) {
+        await updateUserProfile({
+          firstName: localProfile.firstName,
+          lastName: localProfile.lastName,
+          profilePhoto: localProfile.profilePhoto,
+        });
+      }
+      
+      // Update global state
+      setProfile(localProfile);
+      
+      toast({
+        title: "Profile Saved!",
+        description: "Your changes have been successfully saved.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: error.message,
+      });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handlePreferencesSave = () => {
@@ -223,6 +262,10 @@ export default function Profile() {
     }
     return format(date, 'MMM d, yyyy');
   };
+
+  if (authLoading) {
+    return <ProfileSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
@@ -346,7 +389,7 @@ export default function Profile() {
                   </div>
                    <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" name="email" type="email" value={localProfile.email} onChange={handleInputChange} disabled />
+                    <Input id="email" name="email" type="email" value={localProfile.email} onChange={handleInputChange} />
                     <p className="text-sm text-muted-foreground">Used for account notifications and password recovery</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -369,7 +412,7 @@ export default function Profile() {
                     <Textarea id="bio" name="bio" value={localProfile.bio} onChange={handleInputChange} rows={4} placeholder="Tell us a little about your cooking journey"/>
                   </div>
                   <div className="flex justify-end">
-                    <Button onClick={handleSaveChanges}>Save Changes</Button>
+                    <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -499,7 +542,7 @@ export default function Profile() {
                     <Clock className="w-8 h-8 text-muted-foreground mt-1"/>
                     <div>
                         <p className="font-semibold">Last Login</p>
-                        <p className="text-muted-foreground text-sm">Jan 22, 2025, 02:30 PM</p>
+                        <p className="text-muted-foreground text-sm">{user?.metadata.lastSignInTime ? format(new Date(user.metadata.lastSignInTime), 'MMM d, yyyy, p') : 'N/A'}</p>
                         <p className="text-muted-foreground text-sm">San Francisco, CA</p>
                     </div>
                 </div>
@@ -751,4 +794,56 @@ export default function Profile() {
   );
 }
 
-    
+const ProfileSkeleton = () => (
+    <div className="space-y-8">
+      <div>
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="h-4 w-3/4 mt-2" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 space-y-8">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-4">
+                    <Skeleton className="w-32 h-32 rounded-full" />
+                    <Skeleton className="w-full h-24" />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="w-full h-40" />
+                </CardContent>
+            </Card>
+        </div>
+        <div className="lg:col-span-2">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                     <div className="space-y-2">
+                        <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-24 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+      </div>
+    </div>
+)
