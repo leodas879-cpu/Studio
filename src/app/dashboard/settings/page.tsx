@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -11,6 +12,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Shield, Palette, Bell, KeyRound, MonitorSmartphone, LogOut, Moon, Type, Languages, Paintbrush, RefreshCw, Mail, Smartphone, Newspaper, CookingPot, Star } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 
 const SettingsSection = ({ icon: Icon, title, description, children }: { icon: React.ElementType, title: string, description: string, children: React.ReactNode }) => (
@@ -52,11 +57,32 @@ const SettingsInfo = ({ title, description }: { title: string, description?: str
 
 export default function Settings() {
     const { theme, setTheme } = useTheme();
+    const { user, logout, sendPasswordReset } = useAuth();
+    const { toast } = useToast();
+    const router = useRouter();
     const [isDarkMode, setIsDarkMode] = useState(theme === 'dark');
 
     const handleThemeChange = (checked: boolean) => {
         setIsDarkMode(checked);
         setTheme(checked ? 'dark' : 'light');
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        router.push("/");
+    };
+
+    const handlePasswordReset = async () => {
+        if (!user?.email) {
+            toast({ variant: "destructive", title: "Error", description: "No email address found for this user." });
+            return;
+        }
+        try {
+            await sendPasswordReset(user.email);
+            toast({ title: "Password Reset Email Sent", description: `A reset link has been sent to ${user.email}.` });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error", description: error.message });
+        }
     };
 
     return (
@@ -74,7 +100,7 @@ export default function Settings() {
                 <div className="space-y-4">
                     <SettingsRow>
                         <SettingsInfo title="Change Password" description="Update your account password for better security" />
-                        <Button variant="outline"><KeyRound className="mr-2" />Change</Button>
+                        <Button variant="outline" onClick={handlePasswordReset}><KeyRound className="mr-2" />Change</Button>
                     </SettingsRow>
                     <Separator />
                     <SettingsRow>
@@ -84,12 +110,16 @@ export default function Settings() {
                     <Separator />
                     <SettingsRow>
                         <SettingsInfo title="Active Sessions" description="Manage your active login sessions" />
-                        <Button variant="outline"><MonitorSmartphone className="mr-2" />View Sessions</Button>
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/profile">
+                                <MonitorSmartphone className="mr-2" />View Sessions
+                            </Link>
+                        </Button>
                     </SettingsRow>
                     <Separator />
                     <SettingsRow>
                         <SettingsInfo title="Sign Out" description="Sign out from your account on this device" />
-                        <Button variant="destructive"><LogOut className="mr-2" />Sign Out</Button>
+                        <Button variant="destructive" onClick={handleLogout}><LogOut className="mr-2" />Sign Out</Button>
                     </SettingsRow>
                 </div>
             </SettingsSection>
@@ -218,4 +248,5 @@ export default function Settings() {
             </SettingsSection>
         </div>
     );
-}
+
+    
