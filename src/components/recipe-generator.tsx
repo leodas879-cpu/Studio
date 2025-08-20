@@ -20,7 +20,6 @@ const ingredientsData = [
     // Meats & Seafood (Not Vegetarian/Vegan)
     { name: 'Chicken', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
     { name: 'Pork', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
-    { name: 'Beef', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
     { name: 'Fish', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
     { name: 'Shrimp', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
     { name: 'Turkey', isVegetarian: false, isVegan: false, isGlutenFree: true, isHighProtein: true },
@@ -58,6 +57,7 @@ const ingredientsData = [
     { name: 'Coconut Flour', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
     
     // Vegetables
+    { name: 'Bitter Gourd', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
     { name: 'Mushrooms', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: true }, // High protein for a vegetable
     { name: 'Spinach', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
     { name: 'Kale', isVegetarian: true, isVegan: true, isGlutenFree: true, isHighProtein: false },
