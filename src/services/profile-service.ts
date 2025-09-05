@@ -1,49 +1,44 @@
 
 'use server'
 
-import { createClient } from "@/lib/supabase/server";
+import { db } from '@/lib/firebase';
 import type { Profile } from '@/store/profile-store';
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; 
 
 export async function getUserProfile(uid: string): Promise<Profile | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', uid)
-    .single();
+  try {
+    const docRef = doc(db, "profiles", uid);
+    const docSnap = await getDoc(docRef);
 
-  if (error && error.code !== 'PGRST116') { // PGRST116: "object not found"
+    if (docSnap.exists()) {
+      return docSnap.data() as Profile;
+    } else {
+      console.log("No such document!");
+      return null;
+    }
+  } catch (error) {
     console.error('Error fetching profile:', error);
     return null;
   }
-  
-  return data as Profile | null;
 }
 
 export async function createUserProfile(uid: string, profileData: Partial<Profile>) {
-    const supabase = createClient();
-    const { data, error } = await supabase
-        .from('profiles')
-        .insert([{ id: uid, ...profileData }])
-        .select()
-        .single();
-
-    if (error) {
+    try {
+        await setDoc(doc(db, "profiles", uid), { id: uid, ...profileData });
+        const newProfile = await getDoc(doc(db, "profiles", uid));
+        return newProfile.data() as Profile;
+    } catch (error) {
         console.error('Error creating profile:', error);
+        return null;
     }
-    return data;
 }
 
 
 export async function saveUserProfile(uid: string, profileData: Profile) {
-  const supabase = createClient();
-  const { id, ...updateData } = profileData;
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updateData)
-    .eq('id', uid);
-    
-   if (error) {
-     console.error('Error saving profile:', error)
-   }
+  try {
+    const profileRef = doc(db, "profiles", uid);
+    await updateDoc(profileRef, { ...profileData });
+  } catch (error) {
+    console.error('Error saving profile:', error)
+  }
 }

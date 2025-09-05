@@ -1,50 +1,46 @@
 
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
-import type { GenerateRecipeOutput } from '@/ai/flows/generate-recipe-flow';
+import { db } from '@/lib/firebase';
+import type { Recipe } from '@/store/recipe-store';
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where } from "firebase/firestore";
 
-export async function saveRecipe(uid: string, recipe: GenerateRecipeOutput & { isFavorite?: boolean }) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('recipes')
-    .upsert({ 
-        user_id: uid, 
-        recipe_name: recipe.recipeName, 
-        recipe_data: recipe,
-        is_favorite: true,
-    }, { onConflict: 'user_id, recipe_name' });
-  
-  if (error) {
+async function getFavoritesCollectionRef(uid: string) {
+  const userDocRef = doc(db, 'users', uid);
+  return collection(userDocRef, 'favoriteRecipes');
+}
+
+export async function saveRecipe(uid:string, recipe: Recipe) {
+  try {
+    const favoritesCollection = await getFavoritesCollectionRef(uid);
+    const recipeDoc = doc(favoritesCollection, recipe.recipeName);
+    await setDoc(recipeDoc, recipe);
+  } catch (error) {
     console.error('Error saving recipe:', error);
   }
 }
 
 export async function removeRecipe(uid: string, recipeName: string) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('recipes')
-    .delete()
-    .eq('user_id', uid)
-    .eq('recipe_name', recipeName);
-
-  if (error) {
+  try {
+    const favoritesCollection = await getFavoritesCollectionRef(uid);
+    const recipeDoc = doc(favoritesCollection, recipeName);
+    await deleteDoc(recipeDoc);
+  } catch (error) {
     console.error('Error removing recipe:', error);
   }
 }
 
-export async function getRecipes(uid: string): Promise<(GenerateRecipeOutput & { isFavorite?: boolean })[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-        .from('recipes')
-        .select('recipe_data')
-        .eq('user_id', uid)
-        .eq('is_favorite', true);
-
-    if (error) {
+export async function getRecipes(uid: string): Promise<Recipe[]> {
+    try {
+        const favoritesCollection = await getFavoritesCollectionRef(uid);
+        const querySnapshot = await getDocs(favoritesCollection);
+        const recipes: Recipe[] = [];
+        querySnapshot.forEach((doc) => {
+            recipes.push(doc.data() as Recipe);
+        });
+        return recipes;
+    } catch (error) {
         console.error('Error getting recipes:', error);
         return [];
     }
-
-    return data.map(item => item.recipe_data) as (GenerateRecipeOutput & { isFavorite?: boolean })[];
 }
