@@ -1,23 +1,23 @@
+
 # ChefAI Blueprint
 
-This document outlines the architecture and components of the ChefAI application.
+This document outlines the structure and key components of the ChefAI application.
 
-## Tech Stack
+## Core Technologies
 
 - **Framework**: Next.js (App Router)
-- **Styling**: Tailwind CSS with shadcn/ui components
-- **AI/Generative**: Genkit with Google AI
-- **Authentication**: Firebase Auth
-- **Database**: Firestore
+- **Styling**: Tailwind CSS with ShadCN UI
+- **AI/ML**: Genkit
+- **Authentication & DB**: Firebase
 
-## File Structure
+## Project Structure
 
 The project follows a standard Next.js `src` directory structure.
 
-- `src/app`: Contains all routes and pages.
-- `src/components`: Reusable React components.
-- `src/ai`: Genkit flows and AI-related logic.
-- `src/lib`: Utility functions and library initializations (Firebase).
-- `src/hooks`: Custom React hooks.
+- `src/app`: Contains all routes and UI pages.
+- `src/components`: Reusable React components, including ShadCN UI components.
+- `src/lib`: Utility functions and library initializations (e.g., Firebase).
+- `src/hooks`: Custom React hooks (e.g., `useAuth`, `useToast`).
+- `src/store`: Zustand stores for global state management.
 - `src/services`: Server-side functions for database interactions.
-- `src/store`: Zustand stores for client-side state management.
+- `src/ai`: Genkit flows and AI-related logic.
