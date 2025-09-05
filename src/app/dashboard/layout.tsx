@@ -23,6 +23,9 @@ export default function DashboardLayout({
     if (!loading && !user) {
       router.push('/login');
     }
+    if (!loading && user) {
+      loadRecipes(user.uid);
+    }
   }, [user, loading, router, loadRecipes]);
 
   if (loading) {

@@ -176,8 +176,10 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     try {
+      // Update Firestore
       await saveUserProfile(user.uid, localProfile);
 
+      // Update Firebase Auth if necessary
       if (profile.email !== localProfile.email) {
           await updateUserEmail(localProfile.email);
       }
@@ -189,6 +191,7 @@ export default function ProfilePage() {
         });
       }
       
+      // Update global state
       setProfile(localProfile);
       
       toast({
@@ -239,7 +242,7 @@ export default function ProfilePage() {
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const dataUrl = canvas.toDataURL('image/png');
             setLocalProfile(prev => ({ ...prev, profilePhoto: dataUrl }));
-            setIsCameraOpen(false); 
+            setIsCameraOpen(false); // Close dialog after taking picture
         }
     }
   }
@@ -281,6 +284,7 @@ export default function ProfilePage() {
         </TabsList>
         <TabsContent value="profile" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column */}
             <div className="lg:col-span-1 space-y-8">
               <Card>
                 <CardHeader>
@@ -370,6 +374,7 @@ export default function ProfilePage() {
               </Card>
             </div>
 
+            {/* Right Column */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
@@ -602,7 +607,7 @@ export default function ProfilePage() {
                     </div>
                      <div className="flex items-start gap-2">
                         <CheckCircle className="w-5 h-5 text-green-600 mt-0.5"/>
-                        <p className="text-sm text-muted-foreground">Regularly review and unused connected devices</p>
+                        <p className="text-sm text-muted-foreground">Regularly review and remove unused connected devices</p>
                     </div>
                  </div>
               </div>

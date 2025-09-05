@@ -32,28 +32,42 @@ export default function SignupPage() {
       return;
     }
     setLoading(true);
-    const { error } = await signup(email, password);
-
-    if (error) {
+    try {
+      await signup(email, password);
+      toast({
+        title: "Account Created!",
+        description: "Welcome to ChefAI. You are now logged in.",
+      });
+      router.push("/dashboard");
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Sign Up Failed",
         description: error.message,
       });
-    } else {
-        toast({
-        title: "Account Created!",
-        description: "Welcome to ChefAI. You are now logged in.",
-      });
-      router.push("/dashboard");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    await loginWithGoogle();
-    setLoading(false);
+    try {
+      await loginWithGoogle();
+      toast({
+        title: "Account Created!",
+        description: "Welcome to ChefAI.",
+      });
+      router.push("/dashboard");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Google Sign-Up Failed",
+        description: error.message,
+      });
+    } finally {
+        setLoading(false);
+    }
   }
 
   return (

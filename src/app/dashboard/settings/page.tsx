@@ -65,6 +65,7 @@ export default function Settings() {
     const router = useRouter();
     const [isDarkMode, setIsDarkMode] = useState(theme === 'dark');
 
+    const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
@@ -84,20 +85,20 @@ export default function Settings() {
             toast({ variant: "destructive", title: "Error", description: "New passwords do not match." });
             return;
         }
-        if (!newPassword) {
-            toast({ variant: "destructive", title: "Error", description: "Please enter a new password." });
+        if (!currentPassword || !newPassword) {
+            toast({ variant: "destructive", title: "Error", description: "Please fill in all password fields." });
             return;
         }
 
-        const { error } = await changePassword(newPassword);
-
-        if (error) {
-             toast({ variant: "destructive", title: "Error changing password", description: error.message });
-        } else {
+        try {
+            await changePassword(currentPassword, newPassword);
             toast({ title: "Success", description: "Your password has been changed successfully." });
             setIsPasswordChangeOpen(false);
+            setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error changing password", description: error.message });
         }
     };
 
@@ -124,10 +125,14 @@ export default function Settings() {
                                 <DialogHeader>
                                     <DialogTitle>Change Your Password</DialogTitle>
                                     <DialogDescription>
-                                        Enter a new password below. You will be logged out from other sessions.
+                                        Enter your current password and a new password below.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="current-password">Current Password</Label>
+                                        <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                                    </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="new-password">New Password</Label>
                                         <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
@@ -155,7 +160,7 @@ export default function Settings() {
                     <SettingsRow>
                         <SettingsInfo title="Active Sessions" description="Manage your active login sessions" />
                         <Button asChild variant="outline">
-                            <Link href="/dashboard/profile#security">
+                            <Link href="/dashboard/profile">
                                 <MonitorSmartphone className="mr-2" />View Sessions
                             </Link>
                         </Button>
@@ -292,3 +297,5 @@ export default function Settings() {
             </SettingsSection>
         </div>
     );
+
+    
