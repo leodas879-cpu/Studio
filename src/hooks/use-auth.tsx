@@ -2,35 +2,21 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import type { User } from 'firebase/auth';
-import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  GoogleAuthProvider,
-  signInWithPopup,
-  sendPasswordResetEmail,
-  updatePassword,
-  updateEmail,
-  updateProfile
-} from 'firebase/auth';
+import { onAuthStateChanged, User, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, updateProfile, updateEmail, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserProfile, createUserProfile, saveUserProfile } from '@/services/profile-service';
 import { useProfileStore, type Profile } from '@/store/profile-store';
 import { useRecipeStore } from '@/store/recipe-store';
-import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<{ error: { message: string } | null }>;
-  signup: (email: string, pass: string) => Promise<{ error: { message: string } | null }>;
+  login: (email: string, pass: string) => Promise<any>;
+  signup: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  sendPasswordReset: (email: string) => Promise<{ error: { message: string } | null }>;
-  changePassword: (newPassword: string) => Promise<{ error: { message: string } | null }>;
+  loginWithGoogle: () => Promise<any>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   updateUserEmail: (email: string) => Promise<void>;
   updateUserProfile: (profileData: Partial<Profile>) => Promise<void>;
 }
@@ -41,99 +27,114 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { setProfile, profile } = useProfileStore();
-  const { clearRecipes, loadRecipes } = useRecipeStore();
-  const router = useRouter();
+  const { clearRecipes } = useRecipeStore();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        setLoading(true);
-        if (user) {
-            setUser(user);
-            let userProfile = await getUserProfile(user.uid);
-            if (!userProfile) {
-                const newProfileData: Profile = {
-                    id: user.uid,
-                    firstName: user.displayName?.split(' ')[0] || '',
-                    lastName: user.displayName?.split(' ')[1] || '',
-                    email: user.email || '',
-                    profilePhoto: user.photoURL || '',
-                    username: user.email?.split('@')[0] || '',
-                    phone: user.phoneNumber || '',
-                    bio: ''
-                };
-                await createUserProfile(user.uid, newProfileData);
-                userProfile = newProfileData;
-            }
-            setProfile(userProfile as Profile);
-            await loadRecipes(user.uid);
-        } else {
-            setUser(null);
-            setProfile({ id: '', username: "", email: "", firstName: "", lastName: "", phone: "", bio: "", profilePhoto: "" });
-            clearRecipes();
+      if (user) {
+        setUser(user);
+        try {
+          let userProfile = await getUserProfile(user.uid);
+          if (!userProfile) {
+            const newProfileData: Profile = {
+                firstName: user.displayName?.split(' ')[0] || '',
+                lastName: user.displayName?.split(' ')[1] || '',
+                email: user.email || '',
+                profilePhoto: user.photoURL || '',
+                username: user.email?.split('@')[0] || '',
+                phone: user.phoneNumber || '',
+                bio: ''
+            };
+            await createUserProfile(user.uid, newProfileData);
+            userProfile = newProfileData;
+          }
+          setProfile(userProfile as Profile);
+        } catch (error) {
+          console.error("Failed to fetch user profile", error);
         }
-        setLoading(false);
+      } else {
+        setUser(null);
+        setProfile({
+            username: "", email: "", firstName: "", lastName: "", phone: "", bio: "", profilePhoto: ""
+        });
+        clearRecipes();
+      }
+      setLoading(false);
     });
-
     return () => unsubscribe();
-  }, []);
+  }, [setProfile, clearRecipes]);
 
-  const login = async (email: string, pass: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      return { error: null };
-    } catch (e: any) {
-      return { error: { message: e.message } };
-    }
+  const login = (email: string, pass: string) => {
+    return signInWithEmailAndPassword(auth, email, pass);
   };
   
   const signup = async (email: string, pass: string) => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, pass);
-      return { error: null };
-    } catch (e: any) {
-      return { error: { message: e.message } };
-    }
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const user = userCredential.user;
+    const profileData: Profile = {
+        email,
+        firstName: '',
+        lastName: '',
+        username: email.split('@')[0],
+        profilePhoto: '',
+        phone: '',
+        bio: ''
+    };
+    await createUserProfile(user.uid, profileData);
+    setProfile(profileData);
+    return userCredential;
   };
 
   const logout = async () => {
     await signOut(auth);
-    router.push('/');
   };
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    try {
-        await signInWithPopup(auth, provider);
-        router.push('/dashboard');
-    } catch (error) {
-        console.error("Google sign-in error", error);
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Check if user profile already exists, if not, create one
+    const existingProfile = await getUserProfile(user.uid);
+    if (!existingProfile) {
+        const profileData: Profile = {
+            email: user.email || '',
+            firstName: user.displayName?.split(' ')[0] || '',
+            lastName: user.displayName?.split(' ')[1] || '',
+            username: user.email?.split('@')[0] || '',
+            profilePhoto: user.photoURL || '',
+            phone: user.phoneNumber || '',
+            bio: ''
+        };
+        await createUserProfile(user.uid, profileData);
+        setProfile(profileData);
+    } else {
+        setProfile(existingProfile);
     }
+    return result;
   }
 
-  const sendPasswordReset = async (email: string) => {
-    try {
-        await sendPasswordResetEmail(auth, email);
-        return { error: null };
-    } catch (e: any) {
-        return { error: { message: e.message } };
-    }
+  const sendPasswordReset = (email: string) => {
+    return sendPasswordResetEmail(auth, email);
   }
 
-  const changePassword = async (newPassword: string) => {
-     if (auth.currentUser) {
-        try {
-            await updatePassword(auth.currentUser, newPassword);
-            return { error: null };
-        } catch(e: any) {
-            return { error: { message: e.message } };
-        }
-     }
-     return { error: { message: "No user is currently signed in." } };
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    const user = auth.currentUser;
+    if (user && user.email) {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      // Re-authenticate the user
+      await reauthenticateWithCredential(user, credential);
+      // Now update the password
+      await updatePassword(user, newPassword);
+    } else {
+      throw new Error("No user is currently signed in or user has no email.");
+    }
   }
 
   const updateUserEmail = async (newEmail: string) => {
     if (auth.currentUser) {
         await updateEmail(auth.currentUser, newEmail);
+        // Also update the email in our database
         await saveUserProfile(auth.currentUser.uid, { ...profile, email: newEmail });
     } else {
         throw new Error("No user is currently signed in.");
@@ -142,10 +143,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = async (profileData: Partial<Profile>) => {
       if (auth.currentUser) {
-         await updateProfile(auth.currentUser, {
-            displayName: `${profileData.firstName} ${profileData.lastName}`,
-            photoURL: profileData.profilePhoto,
-         });
+          await updateProfile(auth.currentUser, {
+              displayName: `${profileData.firstName} ${profileData.lastName}`,
+              photoURL: profileData.profilePhoto,
+          });
       } else {
           throw new Error("No user is currently signed in.");
       }
@@ -163,3 +164,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

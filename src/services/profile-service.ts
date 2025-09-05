@@ -1,44 +1,30 @@
-
-'use server'
-
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Profile } from '@/store/profile-store';
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; 
+
+const USERS_COLLECTION = 'users';
 
 export async function getUserProfile(uid: string): Promise<Profile | null> {
-  try {
-    const docRef = doc(db, "profiles", uid);
-    const docSnap = await getDoc(docRef);
+  const docRef = doc(db, USERS_COLLECTION, uid);
+  const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      return docSnap.data() as Profile;
-    } else {
-      console.log("No such document!");
-      return null;
-    }
-  } catch (error) {
-    console.error('Error fetching profile:', error);
+  if (docSnap.exists()) {
+    return docSnap.data() as Profile;
+  } else {
+    console.log("No such document!");
     return null;
   }
 }
 
 export async function createUserProfile(uid: string, profileData: Partial<Profile>) {
-    try {
-        await setDoc(doc(db, "profiles", uid), { id: uid, ...profileData });
-        const newProfile = await getDoc(doc(db, "profiles", uid));
-        return newProfile.data() as Profile;
-    } catch (error) {
-        console.error('Error creating profile:', error);
-        return null;
-    }
+    const docRef = doc(db, USERS_COLLECTION, uid);
+    await setDoc(docRef, profileData);
 }
 
 
 export async function saveUserProfile(uid: string, profileData: Profile) {
-  try {
-    const profileRef = doc(db, "profiles", uid);
-    await updateDoc(profileRef, { ...profileData });
-  } catch (error) {
-    console.error('Error saving profile:', error)
-  }
+  const docRef = doc(db, USERS_COLLECTION, uid);
+  await updateDoc(docRef, {
+      ...profileData
+  });
 }

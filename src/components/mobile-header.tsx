@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Menu, ChefHat, Home, Heart, Clock, User, Settings, LogOut, Sun, Moon, Laptop } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "next-themes";
