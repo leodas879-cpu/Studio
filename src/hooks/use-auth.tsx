@@ -2,8 +2,21 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import type { User, AuthError } from '@supabase/supabase-js';
-import { createSupabaseClient } from '@/lib/supabase';
+import type { User } from 'firebase/auth';
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
+  updatePassword,
+  updateEmail,
+  updateProfile
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { getUserProfile, createUserProfile, saveUserProfile } from '@/services/profile-service';
 import { useProfileStore, type Profile } from '@/store/profile-store';
 import { useRecipeStore } from '@/store/recipe-store';
@@ -12,12 +25,12 @@ import { useRouter } from 'next/navigation';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<{ error: AuthError | null }>;
-  signup: (email: string, pass: string) => Promise<{ error: AuthError | null }>;
+  login: (email: string, pass: string) => Promise<{ error: { message: string } | null }>;
+  signup: (email: string, pass: string) => Promise<{ error: { message: string } | null }>;
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  sendPasswordReset: (email: string) => Promise<{ error: AuthError | null }>;
-  changePassword: (newPassword: string) => Promise<{ error: AuthError | null }>;
+  sendPasswordReset: (email: string) => Promise<{ error: { message: string } | null }>;
+  changePassword: (newPassword: string) => Promise<{ error: { message: string } | null }>;
   updateUserEmail: (email: string) => Promise<void>;
   updateUserProfile: (profileData: Partial<Profile>) => Promise<void>;
 }
@@ -29,127 +42,109 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { setProfile, profile } = useProfileStore();
   const { clearRecipes, loadRecipes } = useRecipeStore();
-  const supabase = createSupabaseClient();
   const router = useRouter();
 
   useEffect(() => {
-    const checkUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        setLoading(true);
         if (user) {
             setUser(user);
-            let userProfile = await getUserProfile(user.id);
+            let userProfile = await getUserProfile(user.uid);
             if (!userProfile) {
                 const newProfileData: Profile = {
-                    id: user.id,
-                    firstName: user.user_metadata.full_name?.split(' ')[0] || '',
-                    lastName: user.user_metadata.full_name?.split(' ')[1] || '',
+                    id: user.uid,
+                    firstName: user.displayName?.split(' ')[0] || '',
+                    lastName: user.displayName?.split(' ')[1] || '',
                     email: user.email || '',
-                    profilePhoto: user.user_metadata.avatar_url || '',
+                    profilePhoto: user.photoURL || '',
                     username: user.email?.split('@')[0] || '',
-                    phone: user.phone || '',
+                    phone: user.phoneNumber || '',
                     bio: ''
                 };
-                await createUserProfile(user.id, newProfileData);
+                await createUserProfile(user.uid, newProfileData);
                 userProfile = newProfileData;
             }
             setProfile(userProfile as Profile);
-            await loadRecipes(user.id);
+            await loadRecipes(user.uid);
         } else {
             setUser(null);
             setProfile({ id: '', username: "", email: "", firstName: "", lastName: "", phone: "", bio: "", profilePhoto: "" });
             clearRecipes();
         }
         setLoading(false);
-    };
-
-    checkUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        setLoading(true);
-        const currentUser = session?.user || null;
-        setUser(currentUser);
-        if (currentUser) {
-            if (event === 'SIGNED_IN') {
-                let userProfile = await getUserProfile(currentUser.id);
-                 if (!userProfile) {
-                    const newProfileData: Profile = {
-                        id: currentUser.id,
-                        firstName: currentUser.user_metadata.full_name?.split(' ')[0] || '',
-                        lastName: currentUser.user_metadata.full_name?.split(' ')[1] || '',
-                        email: currentUser.email || '',
-                        profilePhoto: currentUser.user_metadata.avatar_url || '',
-                        username: currentUser.email?.split('@')[0] || '',
-                        phone: currentUser.phone || '',
-                        bio: ''
-                    };
-                    await createUserProfile(currentUser.id, newProfileData);
-                    userProfile = newProfileData;
-                }
-                setProfile(userProfile as Profile);
-                await loadRecipes(currentUser.id);
-            }
-        } else {
-            setProfile({ id: '', username: "", email: "", firstName: "", lastName: "", phone: "", bio: "", profilePhoto: "" });
-            clearRecipes();
-        }
-        setLoading(false);
     });
 
-    return () => {
-        subscription.unsubscribe();
-    };
-}, []);
+    return () => unsubscribe();
+  }, []);
 
-
-  const login = (email: string, pass: string) => {
-    return supabase.auth.signInWithPassword({ email, password: pass });
+  const login = async (email: string, pass: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      return { error: null };
+    } catch (e: any) {
+      return { error: { message: e.message } };
+    }
   };
   
   const signup = async (email: string, pass: string) => {
-    return supabase.auth.signUp({ email, password: pass });
+    try {
+      await createUserWithEmailAndPassword(auth, email, pass);
+      return { error: null };
+    } catch (e: any) {
+      return { error: { message: e.message } };
+    }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    await signOut(auth);
     router.push('/');
   };
 
   const loginWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-            redirectTo: `${window.location.origin}/auth/callback`
-        }
-    });
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        router.push('/dashboard');
+    } catch (error) {
+        console.error("Google sign-in error", error);
+    }
   }
 
-  const sendPasswordReset = (email: string) => {
-    return supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/dashboard/settings`
-    });
+  const sendPasswordReset = async (email: string) => {
+    try {
+        await sendPasswordResetEmail(auth, email);
+        return { error: null };
+    } catch (e: any) {
+        return { error: { message: e.message } };
+    }
   }
 
   const changePassword = async (newPassword: string) => {
-     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
-     return { error };
+     if (auth.currentUser) {
+        try {
+            await updatePassword(auth.currentUser, newPassword);
+            return { error: null };
+        } catch(e: any) {
+            return { error: { message: e.message } };
+        }
+     }
+     return { error: { message: "No user is currently signed in." } };
   }
 
   const updateUserEmail = async (newEmail: string) => {
-    if (user) {
-        await supabase.auth.updateUser({ email: newEmail });
-        await saveUserProfile(user.id, { ...profile, email: newEmail });
+    if (auth.currentUser) {
+        await updateEmail(auth.currentUser, newEmail);
+        await saveUserProfile(auth.currentUser.uid, { ...profile, email: newEmail });
     } else {
         throw new Error("No user is currently signed in.");
     }
   }
 
   const updateUserProfile = async (profileData: Partial<Profile>) => {
-      if (user) {
-         await supabase.auth.updateUser({
-            data: {
-                full_name: `${profileData.firstName} ${profileData.lastName}`,
-                avatar_url: profileData.profilePhoto
-            }
+      if (auth.currentUser) {
+         await updateProfile(auth.currentUser, {
+            displayName: `${profileData.firstName} ${profileData.lastName}`,
+            photoURL: profileData.profilePhoto,
          });
       } else {
           throw new Error("No user is currently signed in.");

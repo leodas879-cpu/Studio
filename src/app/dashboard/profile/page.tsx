@@ -176,10 +176,8 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     try {
-      // Update Firestore
-      await saveUserProfile(user.id, localProfile);
+      await saveUserProfile(user.uid, localProfile);
 
-      // Update Supabase Auth if necessary
       if (profile.email !== localProfile.email) {
           await updateUserEmail(localProfile.email);
       }
@@ -191,7 +189,6 @@ export default function ProfilePage() {
         });
       }
       
-      // Update global state
       setProfile(localProfile);
       
       toast({
@@ -242,7 +239,7 @@ export default function ProfilePage() {
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const dataUrl = canvas.toDataURL('image/png');
             setLocalProfile(prev => ({ ...prev, profilePhoto: dataUrl }));
-            setIsCameraOpen(false); // Close dialog after taking picture
+            setIsCameraOpen(false); 
         }
     }
   }
@@ -284,7 +281,6 @@ export default function ProfilePage() {
         </TabsList>
         <TabsContent value="profile" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
             <div className="lg:col-span-1 space-y-8">
               <Card>
                 <CardHeader>
@@ -374,7 +370,6 @@ export default function ProfilePage() {
               </Card>
             </div>
 
-            {/* Right Column */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
@@ -542,7 +537,7 @@ export default function ProfilePage() {
                     <Clock className="w-8 h-8 text-muted-foreground mt-1"/>
                     <div>
                         <p className="font-semibold">Last Login</p>
-                        <p className="text-muted-foreground text-sm">{user?.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'MMM d, yyyy, p') : 'N/A'}</p>
+                        <p className="text-muted-foreground text-sm">{user?.metadata.lastSignInTime ? format(new Date(user.metadata.lastSignInTime), 'MMM d, yyyy, p') : 'N/A'}</p>
                         <p className="text-muted-foreground text-sm">San Francisco, CA</p>
                     </div>
                 </div>

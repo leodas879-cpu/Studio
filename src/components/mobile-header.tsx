@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Menu, ChefHat, Home, Heart, Clock, User, Settings, LogOut, Sun, Moon, Laptop } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "next-themes";
@@ -88,11 +87,11 @@ export function MobileHeader({ isLanding = false }: { isLanding?: boolean }) {
                 {user && (
                      <div className="flex items-center gap-3 px-2 mb-6">
                         <Avatar>
-                            <AvatarImage src={user.user_metadata.avatar_url || profile.profilePhoto} alt="Profile Photo" />
+                            <AvatarImage src={user.photoURL || profile.profilePhoto} alt="Profile Photo" />
                             <AvatarFallback>{profile.firstName?.[0]}{profile.lastName?.[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="font-semibold">{user.user_metadata.full_name || `${profile.firstName} ${profile.lastName}`}</p>
+                            <p className="font-semibold">{user.displayName || `${profile.firstName} ${profile.lastName}`}</p>
                             <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                         </div>
                     </div>
