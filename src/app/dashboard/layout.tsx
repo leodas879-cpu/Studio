@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MobileHeader } from '@/components/mobile-header';
 import { useRecipeStore } from '@/store/recipe-store';
+import { useProfileStore } from '@/store/profile-store';
 
 export default function DashboardLayout({
   children,
@@ -17,18 +18,24 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth();
   const { loadRecipes } = useRecipeStore();
+  const { profile } = useProfileStore();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
-    if (!loading && user) {
-      loadRecipes(user.uid);
+  }, [user, loading, router]);
+  
+  useEffect(() => {
+    if (user?.uid) {
+        loadRecipes(user.uid)
     }
-  }, [user, loading, router, loadRecipes]);
+  }, [user?.uid, loadRecipes]);
 
-  if (loading) {
+  const isDataLoading = loading || !profile.email;
+
+  if (isDataLoading) {
     return (
         <div className="flex min-h-screen">
             <div className="hidden md:flex md:w-64 md:flex-col">
