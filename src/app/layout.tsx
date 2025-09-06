@@ -9,7 +9,6 @@ import { Literata } from 'next/font/google';
 const literata = Literata({
   subsets: ['latin'],
   variable: '--font-literata',
-  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -23,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={literata.variable}>
-      <body className="font-body antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${literata.variable} font-sans antialiased`}>
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
