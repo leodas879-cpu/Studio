@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import Image from "next/image";
 
 
 interface RecipeDisplayProps {
@@ -57,6 +58,17 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
   return (
     <Card className="h-full overflow-auto animate-in fade-in-50 duration-500 shadow-lg flex flex-col">
       <CardHeader>
+        {recipe.imageUrl && (
+            <div className="mb-4 rounded-lg overflow-hidden">
+                <Image
+                    src={recipe.imageUrl}
+                    alt={recipe.recipeName}
+                    width={800}
+                    height={400}
+                    className="object-cover w-full h-64"
+                />
+            </div>
+        )}
         <CardTitle className="text-4xl font-headline tracking-tight">{recipe.recipeName}</CardTitle>
         <CardDescription>A delicious recipe generated just for you by ChefAI.</CardDescription>
       </CardHeader>
@@ -164,7 +176,8 @@ function RecipeSkeleton() {
   return (
     <Card className="h-full">
       <CardHeader>
-        <Skeleton className="h-10 w-3/4 rounded-lg" />
+        <Skeleton className="w-full h-64 rounded-lg" />
+        <Skeleton className="h-10 w-3/4 rounded-lg mt-4" />
         <Skeleton className="h-4 w-1/2 mt-2 rounded-lg" />
       </CardHeader>
       <CardContent className="space-y-8">

@@ -7,6 +7,7 @@ export type Recipe = GenerateRecipeOutput & {
   vegan?: boolean;
   glutenFree?: boolean;
   isFavorite?: boolean;
+  imageUrl?: string;
 };
 
 interface RecipeStore {

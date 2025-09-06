@@ -10,6 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { recipeRules } from '@/lib/recipe-rules';
+import { generateRecipeImage } from './generate-recipe-image-flow';
 
 // Schema for the data returned by TheMealDB API
 const MealDBRecipeSchema = z.object({
@@ -42,7 +43,7 @@ const MealDBRecipeSchema = z.object({
   strMeasure2: z.string().nullish(),
   strMeasure3: z.string().nullish(),
   strMeasure4: z.string().nullish(),
-  strMeasure5: z.string().nullish(),
+  strMeasure5: z_string().nullish(),
   strMeasure6: z.string().nullish(),
   strMeasure7: z.string().nullish(),
   strMeasure8: z.string().nullish(),
@@ -161,6 +162,7 @@ const GenerateRecipeOutputSchema = z.object({
     fat: z.number().optional(),
   }).optional().describe("Total nutritional information for the recipe."),
   youtubeLink: z.string().url().optional().describe("A link to a YouTube tutorial for the recipe, if available."),
+  imageUrl: z.string().url().optional().describe("A URL for an image of the recipe."),
 });
 export type GenerateRecipeOutput = z.infer<typeof GenerateRecipeOutputSchema>;
 
@@ -199,7 +201,7 @@ const generateRecipePrompt = ai.definePrompt({
     *   If the tool returns a recipe, adapt its name, ingredients, and steps. You still need to apply all science rules, dietary preferences, and fetch nutritional data for the adapted recipe. Set the 'youtubeLink' if the tool provides one.
 
 5.  **Final Output:**
-    *   Return a single, complete recipe in the specified JSON format.
+    *   Return a single, complete recipe in the specified JSON format. Do not worry about generating an image, that will be handled separately.
 `, 
 });
 
@@ -214,6 +216,11 @@ const generateRecipeFlow = ai.defineFlow(
     if (!output) {
       throw new Error("The AI failed to generate a valid recipe. The returned value was null.");
     }
+    
+    // Generate the image after the recipe is created
+    const imageUrl = await generateRecipeImage(output.recipeName);
+    output.imageUrl = imageUrl;
+    
     return output;
   }
 );
