@@ -34,7 +34,7 @@ const MealDBRecipeSchema = z.object({
   strIngredient14: z.string().nullish(),
   strIngredient15: z.string().nullish(),
   strIngredient16: z.string().nullish(),
-  strIngredient17: zstring().nullish(),
+  strIngredient17: z.string().nullish(),
   strIngredient18: z.string().nullish(),
   strIngredient19: z.string().nullish(),
   strIngredient20: z.string().nullish(),
