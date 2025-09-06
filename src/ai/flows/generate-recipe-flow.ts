@@ -198,7 +198,7 @@ const generateRecipePrompt = ai.definePrompt({
     *   Sum up the total calories, protein, carbs, and fat for the entire dish and populate the 'nutrition' field.
 
 4.  **Fallback (only if you fail):**
-    *   If and only if you absolutely cannot create a recipe from scratch, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient from the user's list.
+    *   If and only if you absolutely cannot create a recipe from scratch, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient (e.g., '{{ingredients[0]}}').
     *   If the tool returns a recipe, adapt its name, ingredients, and steps. You still need to apply all science rules, dietary preferences, and fetch nutritional data for the adapted recipe. Set the 'youtubeLink' if the tool provides one.
 
 5.  **Final Output:**
@@ -215,8 +215,35 @@ const generateRecipeFlow = ai.defineFlow(
   async input => {
     const { output } = await generateRecipePrompt(input);
     
-    if (!output || !output.recipeName) {
-       throw new Error("The AI failed to generate a recipe with the selected ingredients. Please try different ingredients or preferences.");
+    if (!output) {
+        // Fallback to MealDB if primary generation fails
+        const mealDbTool = getRecipeFromMealDBTool();
+        const fallbackResult = await mealDbTool({ingredient: input.ingredients[0]});
+        
+        if (!fallbackResult || fallbackResult.length === 0) {
+           throw new Error("The AI failed to generate a recipe with the selected ingredients. Please try different ingredients or preferences.");
+        }
+        
+        const fallbackRecipe = fallbackResult[0];
+
+        // Manually construct the output from the fallback
+        const requiredIngredients: string[] = [];
+        for (let i = 1; i <= 20; i++) {
+            const ingredient = fallbackRecipe[`strIngredient${i}` as keyof typeof fallbackRecipe];
+            const measure = fallbackRecipe[`strMeasure${i}` as keyof typeof fallbackRecipe];
+            if (ingredient && measure) {
+                requiredIngredients.push(`${measure.trim()} ${ingredient.trim()}`);
+            }
+        }
+        
+        const finalOutput: GenerateRecipeOutput = {
+            recipeName: fallbackRecipe.strMeal,
+            steps: fallbackRecipe.strInstructions.split('\r\n').filter(s => s.trim() !== ''),
+            requiredIngredients: requiredIngredients,
+            youtubeLink: fallbackRecipe.strYoutube,
+            imageUrl: fallbackRecipe.strMealThumb, // Use the image from MealDB
+        }
+        return finalOutput;
     }
     
     // Generate the image after the recipe is created
@@ -226,3 +253,5 @@ const generateRecipeFlow = ai.defineFlow(
     return output;
   }
 );
+
+    

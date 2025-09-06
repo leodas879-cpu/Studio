@@ -25,10 +25,8 @@ export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<
     return { data: recipe, error: null };
   } catch (e: any) {
     console.error(e);
-    // Catch the specific error from the flow and pass it to the frontend.
-    if (e instanceof Error) {
-        return { data: null, error: e.message };
-    }
     return { data: null, error: "An unexpected error occurred while generating the recipe. Please try again later." };
   }
 }
+
+    
