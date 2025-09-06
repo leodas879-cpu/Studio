@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from '@/hooks/use-auth';
 import { Literata } from 'next/font/google';
-import { cn } from '@/lib/utils';
 
 const literata = Literata({
   subsets: ['latin'],
@@ -25,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", literata.variable)}>
+      <body className={literata.className}>
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
