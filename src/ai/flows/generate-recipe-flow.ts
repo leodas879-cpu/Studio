@@ -214,8 +214,9 @@ const generateRecipeFlow = ai.defineFlow(
   },
   async input => {
     const { output } = await generateRecipePrompt(input);
-    if (!output) {
-      throw new Error("The AI failed to generate a valid recipe. The returned value was null.");
+    
+    if (!output || !output.recipeName) {
+       throw new Error("The AI failed to generate a recipe with the selected ingredients. Please try different ingredients or preferences.");
     }
     
     // Generate the image after the recipe is created

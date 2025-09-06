@@ -1,3 +1,4 @@
+
 "use server";
 
 import { generateRecipe, type GenerateRecipeInput, type GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
@@ -21,12 +22,13 @@ export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<
 
   try {
     const recipe = await generateRecipe(parsedInput.data);
-    if (!recipe.recipeName || recipe.steps.length === 0) {
-      return { data: null, error: "The AI failed to generate a valid recipe with the selected ingredients. Please try again with different options." };
-    }
     return { data: recipe, error: null };
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
+    // Catch the specific error from the flow and pass it to the frontend.
+    if (e instanceof Error) {
+        return { data: null, error: e.message };
+    }
     return { data: null, error: "An unexpected error occurred while generating the recipe. Please try again later." };
   }
 }
