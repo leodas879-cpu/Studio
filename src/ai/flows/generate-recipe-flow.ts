@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Recipe generation flow that takes ingredients and dietary preferences as input and returns a tailored recipe.
@@ -43,7 +44,7 @@ const MealDBRecipeSchema = z.object({
   strMeasure2: z.string().nullish(),
   strMeasure3: z.string().nullish(),
   strMeasure4: z.string().nullish(),
-  strMeasure5: z_string().nullish(),
+  strMeasure5: z.string().nullish(),
   strMeasure6: z.string().nullish(),
   strMeasure7: z.string().nullish(),
   strMeasure8: z.string().nullish(),
