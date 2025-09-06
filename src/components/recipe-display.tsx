@@ -1,7 +1,7 @@
 import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UtensilsCrossed, Heart } from "lucide-react";
+import { UtensilsCrossed, Heart, Youtube, AlertTriangle, Salad, Beef, Soup, Wheat } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
@@ -9,6 +9,8 @@ import { useRecipeStore, type Recipe } from "@/store/recipe-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 
 interface RecipeDisplayProps {
@@ -59,6 +61,45 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
         <CardDescription>A delicious recipe generated just for you by ChefAI.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-8 flex-1">
+        
+        {recipe.substitutionWarning && (
+            <Alert variant="default" className="bg-yellow-50 border-yellow-300 dark:bg-yellow-950 dark:border-yellow-800">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                <AlertTitle className="text-yellow-800 dark:text-yellow-300">Ingredient Substituted</AlertTitle>
+                <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+                    {recipe.substitutionWarning}
+                </AlertDescription>
+            </Alert>
+        )}
+
+        {recipe.nutrition && (
+            <div>
+                <h3 className="text-xl font-semibold mb-3 font-headline">Nutrition Info (per serving)</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                    <div className="p-3 rounded-lg bg-accent/50">
+                        <Salad className="mx-auto w-7 h-7 text-green-500 mb-1"/>
+                        <p className="text-lg font-bold">{recipe.nutrition.calories?.toFixed(0) ?? 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground">Calories</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-accent/50">
+                        <Beef className="mx-auto w-7 h-7 text-red-500 mb-1"/>
+                        <p className="text-lg font-bold">{recipe.nutrition.protein?.toFixed(1) ?? 'N/A'} g</p>
+                        <p className="text-xs text-muted-foreground">Protein</p>
+                    </div>
+                     <div className="p-3 rounded-lg bg-accent/50">
+                        <Wheat className="mx-auto w-7 h-7 text-yellow-600 mb-1"/>
+                        <p className="text-lg font-bold">{recipe.nutrition.carbs?.toFixed(1) ?? 'N/A'} g</p>
+                        <p className="text-xs text-muted-foreground">Carbs</p>
+                    </div>
+                     <div className="p-3 rounded-lg bg-accent/50">
+                        <Soup className="mx-auto w-7 h-7 text-orange-500 mb-1"/>
+                        <p className="text-lg font-bold">{recipe.nutrition.fat?.toFixed(1) ?? 'N/A'} g</p>
+                        <p className="text-xs text-muted-foreground">Fat</p>
+                    </div>
+                </div>
+            </div>
+        )}
+
         <div>
           <h3 className="text-xl font-semibold mb-3 font-headline">Required Ingredients</h3>
           <div className="flex flex-wrap gap-2">
@@ -93,16 +134,27 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
           </>
         )}
       </CardContent>
-       <CardFooter className="bg-card/50 border-t mt-auto">
+       <CardFooter className="bg-card/50 border-t mt-auto flex items-center justify-between gap-2">
         <Button 
           variant="ghost" 
           size="lg" 
           onClick={handleToggleFavorite} 
-          className="w-full text-lg"
+          className="flex-1 text-lg"
         >
           <Heart className={cn("mr-2", isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
-          {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+          {isFavorite ? 'Favorited' : 'Favorite'}
         </Button>
+        {recipe.youtubeLink && (
+            <>
+                <Separator orientation="vertical" className="h-8" />
+                <Button variant="ghost" size="lg" asChild className="flex-1 text-lg">
+                    <Link href={recipe.youtubeLink} target="_blank">
+                        <Youtube className="mr-2 text-red-600" />
+                        Watch Tutorial
+                    </Link>
+                </Button>
+            </>
+        )}
       </CardFooter>
     </Card>
   );
@@ -116,6 +168,15 @@ function RecipeSkeleton() {
         <Skeleton className="h-4 w-1/2 mt-2 rounded-lg" />
       </CardHeader>
       <CardContent className="space-y-8">
+         <div>
+          <Skeleton className="h-6 w-1/4 mb-4 rounded-lg" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+            </div>
+        </div>
         <div>
           <Skeleton className="h-6 w-1/3 mb-4 rounded-lg" />
           <div className="flex flex-wrap gap-2">
