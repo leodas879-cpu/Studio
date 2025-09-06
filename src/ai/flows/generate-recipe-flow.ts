@@ -198,7 +198,7 @@ const generateRecipePrompt = ai.definePrompt({
     *   Sum up the total calories, protein, carbs, and fat for the entire dish and populate the 'nutrition' field.
 
 4.  **Fallback (only if you fail):**
-    *   If and only if you absolutely cannot create a recipe from scratch, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient (e.g., '{{ingredients[0]}}').
+    *   If and only if you absolutely cannot create a recipe from scratch, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient.
     *   If the tool returns a recipe, adapt its name, ingredients, and steps. You still need to apply all science rules, dietary preferences, and fetch nutritional data for the adapted recipe. Set the 'youtubeLink' if the tool provides one.
 
 5.  **Final Output:**
@@ -253,5 +253,3 @@ const generateRecipeFlow = ai.defineFlow(
     return output;
   }
 );
-
-    

@@ -63,6 +63,7 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
                 <Image
                     src={recipe.imageUrl}
                     alt={recipe.recipeName}
+                    data-ai-hint="food meal"
                     width={800}
                     height={400}
                     className="object-cover w-full h-64"
