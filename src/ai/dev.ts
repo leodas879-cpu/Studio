@@ -4,3 +4,4 @@ config();
 import '@/ai/flows/suggest-recipe-alternatives.ts';
 import '@/ai/flows/generate-recipe-flow.ts';
 import '@/ai/flows/analyze-ingredients-flow.ts';
+import '@/ai/flows/analyze-image-flow.ts';

@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
-import { handleGenerateRecipe, handleAnalyzeIngredients } from "@/app/actions";
+import { handleGenerateRecipe, handleAnalyzeIngredients, handleAnalyzeImage } from "@/app/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -11,13 +11,14 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X } from "lucide-react";
+import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { useRecipeStore } from "@/store/recipe-store";
 import type { AnalyzeIngredientsOutput } from "@/ai/flows/analyze-ingredients-flow";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 const ingredientsData = [
   {"id":"ing001","name":"chicken","category":"meat","tags":["animal-product","protein"]},
@@ -202,6 +203,8 @@ const ingredientsData = [
   {"id":"ing180","name":"vegetable stock","category":"liquid","tags":["savory"]}
 ].sort((a, b) => a.name.localeCompare(b.name));
 
+const ingredientCatalog = ingredientsData.map(i => i.name);
+
 export function RecipeGenerator() {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState({
@@ -216,6 +219,13 @@ export function RecipeGenerator() {
   const [analysisResult, setAnalysisResult] = useState<AnalyzeIngredientsOutput | null>(null);
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
   const [showIncompatibleDialog, setShowIncompatibleDialog] = useState(false);
+  
+  // States for vision feature
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [isImageAnalysisLoading, setIsImageAnalysisLoading] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
 
   const { toast } = useToast();
@@ -248,6 +258,38 @@ export function RecipeGenerator() {
     // Deselect ingredients that are no longer available after a filter change
     setSelectedIngredients(prev => prev.filter(selected => availableIngredients.some(available => available.name === selected)));
   }, [availableIngredients]);
+  
+  useEffect(() => {
+    let stream: MediaStream;
+    const getCameraPermission = async () => {
+      if (!isCameraOpen) {
+        if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({video: true});
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+      }
+    };
+
+    getCameraPermission();
+
+    return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    }
+  }, [isCameraOpen]);
 
 
   const handleIngredientToggle = (ingredient: string) => {
@@ -343,6 +385,38 @@ export function RecipeGenerator() {
     setAnalysisResult(null);
   }
 
+  const handleTakePicture = async () => {
+     if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if (context) {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            
+            setIsCameraOpen(false);
+            setIsImageAnalysisLoading(true);
+
+            const result = await handleAnalyzeImage({ photoDataUri: dataUrl, ingredientCatalog });
+            setIsImageAnalysisLoading(false);
+
+            if (result.error) {
+                toast({ variant: "destructive", title: "Image Analysis Failed", description: result.error });
+            } else if (result.data) {
+                const foundIngredients = result.data.identifiedIngredients;
+                setSelectedIngredients(prev => [...new Set([...prev, ...foundIngredients])]);
+                toast({
+                    title: "Ingredients Identified!",
+                    description: `Added ${foundIngredients.length} ingredients to your list.`,
+                });
+            }
+        }
+    }
+  }
+
+
   const filteredIngredients = availableIngredients.filter(ingredient =>
     ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -354,17 +428,51 @@ export function RecipeGenerator() {
             <CardHeader>
               <CardTitle className="font-headline text-2xl">1. Choose Your Ingredients</CardTitle>
               <CardDescription>Select the items you have on hand. The list will update based on your diet.</CardDescription>
+                <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="mt-2"><Camera className="mr-2"/>Analyze with Camera</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Analyze Ingredients with Camera</DialogTitle>
+                            <DialogDescription>
+                                Point your camera at your ingredients and snap a photo.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div>
+                            <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted />
+                            <canvas ref={canvasRef} className="hidden" />
+                            {hasCameraPermission === false && (
+                                    <Alert variant="destructive" className="mt-4">
+                                    <VideoOff className="h-4 w-4" />
+                                    <AlertTitle>Camera Access Denied</AlertTitle>
+                                    <AlertDescription>
+                                        Please enable camera permissions in your browser settings.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleTakePicture} disabled={!hasCameraPermission || isImageAnalysisLoading}>
+                                {isImageAnalysisLoading ? 'Analyzing...' : 'Take Picture & Analyze'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="relative">
+              <div className="relative flex items-center gap-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Search ingredients..."
-                  className="pl-10"
+                  className="pl-10 flex-1"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                 <Button variant="outline" size="icon">
+                    <Mic className="h-5 w-5" />
+                 </Button>
               </div>
               <ScrollArea className="h-60 border rounded-md p-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -404,11 +512,11 @@ export function RecipeGenerator() {
             </CardContent>
           </Card>
           
-          {isAnalysisLoading && (
+          {(isAnalysisLoading || isImageAnalysisLoading) && (
              <Card className="bg-blue-50 border-blue-200">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-800"><Utensils className="animate-pulse" />Analyzing Ingredients...</CardTitle>
-                    <CardDescription className="text-blue-700">Our AI chef is checking your combination for taste and compatibility.</CardDescription>
+                    <CardTitle className="flex items-center gap-2 text-blue-800"><Utensils className="animate-pulse" />{isImageAnalysisLoading ? 'Analyzing Image...' : 'Analyzing Ingredients...'}</CardTitle>
+                    <CardDescription className="text-blue-700">{isImageAnalysisLoading ? 'Our AI is identifying your ingredients from the photo.' : 'Our AI chef is checking your combination for taste and compatibility.'}</CardDescription>
                 </CardHeader>
             </Card>
           )}
@@ -449,9 +557,9 @@ export function RecipeGenerator() {
             </div>
           </div>
 
-          <Button onClick={handleSubmit} disabled={isAnalysisLoading || isLoading} size="lg" className="w-full text-lg py-7 shadow-lg hover:shadow-primary/50 transition-shadow">
+          <Button onClick={handleSubmit} disabled={isAnalysisLoading || isLoading || isImageAnalysisLoading} size="lg" className="w-full text-lg py-7 shadow-lg hover:shadow-primary/50 transition-shadow">
             <Sparkles className="mr-2 h-5 w-5" />
-            {isAnalysisLoading ? 'Analyzing...' : (isLoading ? 'Generating your masterpiece...' : 'Generate Recipe')}
+            {isAnalysisLoading ? 'Analyzing...' : (isLoading ? 'Generating your masterpiece...' : (isImageAnalysisLoading ? 'Analyzing Image...': 'Generate Recipe'))}
           </Button>
 
         </div>
@@ -473,21 +581,24 @@ export function RecipeGenerator() {
                 </DialogHeader>
                 <div className="py-2">
                     <h3 className="font-semibold mb-3 text-lg font-headline">Suggested Substitutions:</h3>
-                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                         {analysisResult?.substitutions?.map((sub, index) => (
                             <button 
                                 key={index} 
                                 className="w-full text-left p-3 border rounded-lg hover:bg-accent transition-colors flex flex-col"
                                 onClick={() => handleSubstitution(sub.ingredientToReplace, sub.suggestion)}
                             >
-                                <p className="font-semibold text-primary">Replace {sub.ingredientToReplace} with {sub.suggestion}</p>
+                                <p className="font-semibold text-primary">Replace '{sub.ingredientToReplace}' with '{sub.suggestion}'</p>
                                 <p className="text-sm text-muted-foreground mt-1">{sub.reason}</p>
                             </button>
                         ))}
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="destructive" onClick={handleCancelAndClear} className="w-full"><X className="mr-2"/>Cancel & Clear</Button>
+                <DialogFooter className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={() => setShowIncompatibleDialog(false)}>Ignore & Proceed</Button>
+                    <DialogClose asChild>
+                      <Button variant="destructive" onClick={handleCancelAndClear}><X className="mr-2"/>Cancel & Clear</Button>
+                    </DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
