@@ -149,8 +149,8 @@ export function RecipeGenerator() {
   }, [dietaryPreferences]);
 
   useEffect(() => {
-    const availableNames = new Set(availableIngredients.map(i => i.name));
-    setSelectedIngredients(prev => prev.filter(name => availableNames.has(name)));
+    // This effect now starts with empty selections by default.
+    // User action is required to select ingredients.
   }, [availableIngredients]);
 
 
@@ -365,36 +365,33 @@ export function RecipeGenerator() {
         </div>
 
         <Dialog open={showIncompatibleDialog} onOpenChange={setShowIncompatibleDialog}>
-            <DialogContent>
+            <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-destructive text-2xl">
+                    <DialogTitle className="flex items-center gap-3 text-destructive text-xl font-headline">
                         <TriangleAlert className="w-8 h-8" />
                         Incompatible Ingredients
                     </DialogTitle>
-                    <DialogDescription className="pt-2 text-base">
+                    <DialogDescription className="pt-2 text-base text-left text-muted-foreground">
                         {analysisResult?.incompatibilityReason}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    <h3 className="font-semibold text-lg mb-2">Suggested Substitutions:</h3>
-                    <div className="space-y-2">
+                <div className="py-2">
+                    <h3 className="font-semibold mb-3 text-lg font-headline">Suggested Substitutions:</h3>
+                    <div className="space-y-3">
                         {analysisResult?.substitutions?.map((sub, index) => (
-                            <Button 
+                            <button 
                                 key={index} 
-                                variant="outline" 
-                                className="w-full justify-start h-auto py-2"
+                                className="w-full text-left p-3 border rounded-lg hover:bg-accent transition-colors flex flex-col"
                                 onClick={() => handleSubstitution(sub.ingredientToReplace, sub.suggestion)}
                             >
-                                <div>
-                                    <p className="font-semibold">Replace {sub.ingredientToReplace} with {sub.suggestion}</p>
-                                    <p className="text-sm text-muted-foreground text-left">{sub.reason}</p>
-                                </div>
-                            </Button>
+                                <p className="font-semibold text-primary">Replace {sub.ingredientToReplace} with {sub.suggestion}</p>
+                                <p className="text-sm text-muted-foreground mt-1">{sub.reason}</p>
+                            </button>
                         ))}
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="destructive" onClick={handleCancelAndClear}><X className="mr-2"/>Cancel & Clear</Button>
+                    <Button variant="destructive" onClick={handleCancelAndClear} className="w-full"><X className="mr-2"/>Cancel & Clear</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
