@@ -1,5 +1,6 @@
 
 'use server';
+
 /**
  * @fileOverview Recipe generation flow that takes ingredients and dietary preferences as input and returns a tailored recipe.
  *
@@ -13,13 +14,13 @@ import {z} from 'genkit';
 import { recipeRules } from '@/lib/recipe-rules';
 import { generateRecipeImage } from './generate-recipe-image-flow';
 
-// Schema for the data returned by TheMealDB API
-const MealDBRecipeSchema = z.object({
+
+const MealDBDetailsSchema = z.object({
   idMeal: z.string(),
   strMeal: z.string(),
   strInstructions: z.string(),
   strMealThumb: z.string().url(),
-  strYoutube: z.string().url().optional(),
+  strYoutube: z.string().url().nullish(),
   strIngredient1: z.string().nullish(),
   strIngredient2: z.string().nullish(),
   strIngredient3: z.string().nullish(),
@@ -65,79 +66,39 @@ const MealDBRecipeSchema = z.object({
 const getRecipeFromMealDBTool = ai.defineTool(
   {
     name: 'getRecipeFromMealDB',
-    description: 'Get a recipe from TheMealDB API based on a main ingredient. Use this as a fallback if you cannot generate a recipe yourself.',
+    description: "Get a real, existing recipe from TheMealDB API. Use this as a fallback if you can't generate a good one from scratch.",
     inputSchema: z.object({
-      ingredient: z.string().describe('A single main ingredient to search for.'),
+      ingredient: z.string().describe('A single primary ingredient to search for.'),
     }),
-    outputSchema: z.array(MealDBRecipeSchema).optional(),
+    outputSchema: z.object({
+      recipe: MealDBDetailsSchema.optional(),
+    }),
   },
   async (input) => {
     try {
-      const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${input.ingredient}`);
-      if (!response.ok) return undefined;
-      const data = await response.json();
+      const filterResponse = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${input.ingredient}`);
+      if (!filterResponse.ok) return { recipe: undefined };
+      const filterData = await filterResponse.json();
 
-      if (!data.meals || data.meals.length === 0) return undefined;
+      if (!filterData.meals || filterData.meals.length === 0) {
+        return { recipe: undefined };
+      }
       
-      const mealDetailsPromises = data.meals.slice(0, 1).map((meal: any) => 
-        fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`)
-          .then(res => res.json())
-          .then(d => d.meals ? d.meals[0] : null)
-      );
+      const mealDetailsResponse = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${filterData.meals[0].idMeal}`);
+       if (!mealDetailsResponse.ok) return { recipe: undefined };
+      const mealDetailsData = await mealDetailsResponse.json();
       
-      const detailedMeals = await Promise.all(mealDetailsPromises);
-      return detailedMeals.filter(m => m);
+      if (!mealDetailsData.meals || mealDetailsData.meals.length === 0) {
+          return { recipe: undefined };
+      }
 
+      return { recipe: mealDetailsData.meals[0] };
     } catch (e) {
       console.error(e);
-      return undefined;
+      // Don't throw, just return undefined so the AI can handle it.
+      return { recipe: undefined };
     }
   }
-);
-
-const getNutritionInfoTool = ai.defineTool(
-    {
-        name: 'getNutritionInfo',
-        description: 'Get nutritional information for a given ingredient from the USDA FoodData Central API.',
-        inputSchema: z.object({
-            ingredient: z.string().describe('The ingredient to get nutrition info for.'),
-        }),
-        outputSchema: z.object({
-            calories: z.number().optional(),
-            protein: z.number().optional(),
-            carbs: z.number().optional(),
-            fat: z.number().optional(),
-        }).optional(),
-    },
-    async (input) => {
-        try {
-            const apiKey = process.env.USDA_API_KEY;
-            if (!apiKey) return undefined;
-
-            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(input.ingredient)}&pageSize=1`);
-            if (!response.ok) return undefined;
-
-            const data = await response.json();
-            const food = data.foods?.[0];
-            if (!food) return undefined;
-
-            const nutrients = food.foodNutrients;
-            const getNutrientValue = (id: number) => {
-                const nutrient = nutrients.find((n: any) => n.nutrientId === id);
-                return nutrient?.value;
-            };
-
-            return {
-                calories: getNutrientValue(1008), // Energy in kcal
-                protein: getNutrientValue(1003),  // Protein
-                carbs: getNutrientValue(1005),   // Carbohydrate, by difference
-                fat: getNutrientValue(1004),       // Total lipid (fat)
-            };
-        } catch (error) {
-            console.error('Error fetching nutrition info:', error);
-            return undefined;
-        }
-    }
 );
 
 
@@ -153,17 +114,11 @@ export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
 const GenerateRecipeOutputSchema = z.object({
   recipeName: z.string().describe('The name of the generated recipe.'),
   steps: z.array(z.string()).describe('A list of detailed, step-by-step instructions to prepare the recipe. Each step should be very descriptive, explaining the what, how, and why. Mention expected colors, textures, and cooking times.'),
-  requiredIngredients: z.array(z.string()).describe('A list of all ingredients with measurements required for the recipe.'),
-  alternativeSuggestions: z.array(z.string()).optional().describe('Alternative suggestions or variations for the recipe, e.g., ingredient substitutions.'),
-  substitutionWarning: z.string().optional().describe("A warning message if an ingredient was substituted due to a rule conflict."),
-  nutrition: z.object({
-    calories: z.number().optional(),
-    protein: z.number().optional(),
-    carbs: z.number().optional(),
-    fat: z.number().optional(),
-  }).optional().describe("Total nutritional information for the recipe."),
-  youtubeLink: z.string().url().optional().describe("A link to a YouTube tutorial for the recipe, if available."),
-  imageUrl: z.string().url().optional().describe("A URL for an image of the recipe."),
+  requiredIngredients: z.array(z.string()).describe('A list of ingredients required for the recipe, including measurements.'),
+  alternativeSuggestions: z.array(z.string()).describe('Alternative suggestions for the recipe, e.g., substitutions or variations.'),
+  substitutionWarning: z.string().optional().describe('A warning message if an ingredient was substituted due to the science logic rules.'),
+  youtubeLink: z.string().url().optional().describe('A link to a YouTube tutorial for the recipe, if available.'),
+  imageUrl: z.string().url().optional().describe('URL of a generated image for the recipe.'),
 });
 export type GenerateRecipeOutput = z.infer<typeof GenerateRecipeOutputSchema>;
 
@@ -175,34 +130,24 @@ const generateRecipePrompt = ai.definePrompt({
   name: 'generateRecipePrompt',
   input: {schema: GenerateRecipeInputSchema},
   output: {schema: GenerateRecipeOutputSchema},
-  tools: [getRecipeFromMealDBTool, getNutritionInfoTool],
-  prompt: `You are a world-class chef who specializes in creating recipes with a deep understanding of food science. Your task is to generate a recipe based on the user's provided ingredients and dietary preferences.
+  tools: [getRecipeFromMealDBTool],
+  prompt: `You are a world-class chef AI. Your goal is to create a delicious, safe, and logical recipe based on the user's ingredients and preferences.
 
-**Your Process:**
+### Instructions
+1.  **Analyze the user's request**:
+    *   Ingredients: {{ingredients}}
+    *   Dietary Preferences: Vegetarian: {{vegetarian}}, Vegan: {{vegan}}, Gluten-Free: {{glutenFree}}, High-Protein: {{highProtein}}
 
-1.  **Analyze Ingredients & Rules:**
-    *   User's ingredients: {{ingredients}}
-    *   Dietary preferences: Vegetarian: {{vegetarian}}, Vegan: {{vegan}}, Gluten-Free: {{glutenFree}}, High-Protein: {{highProtein}}.
-    *   **Science Rules (CRITICAL):**
-        *   **Invalid Combinations:** DO NOT use these pairs in a recipe: ${JSON.stringify(recipeRules.invalid_combinations)}. If you see them, you MUST replace one using the substitutes list.
-        *   **Preferred Combinations:** TRY to use these combinations: ${JSON.stringify(recipeRules.preferred_combinations)}.
-        *   **Substitutes:** If you must replace an ingredient, use one from this list: ${JSON.stringify(recipeRules.substitutes)}. If you make a substitution, you MUST set the 'substitutionWarning' field to explain what you did (e.g., "Milk was replaced with yogurt due to a dairy-meat conflict.").
+2.  **Generate a Recipe from Scratch**: First, try to create a high-quality, original recipe using the provided ingredients and respecting all dietary preferences. The instructions must be detailed and easy for a home cook to follow.
 
-2.  **Generate Recipe:**
-    *   Create a recipe from scratch using the user's ingredients and adhering to all rules.
-    *   The recipe should be creative and delicious.
-    *   Write clear, easy-to-follow steps.
+3.  **Fallback to Tool**: If and only if you absolutely cannot create a recipe from scratch, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient from the user's list.
+    *   If the tool returns a recipe, **adapt it**. Do not just copy it.
+    *   Modify the recipe from the tool to meet all of the user's dietary preferences.
+    *   Rewrite the instructions to be more detailed and clear.
+    *   Extract the ingredients and measurements.
+    *   If the tool provides a YouTube link, include it in your final output.
 
-3.  **Fetch Nutritional Info:**
-    *   For EACH of the final required ingredients in your recipe, use the \`getNutritionInfoTool\` to get its nutritional data.
-    *   Sum up the total calories, protein, carbs, and fat for the entire dish and populate the 'nutrition' field.
-
-4.  **Fallback (only if you fail):**
-    *   If and only if you absolutely cannot create a recipe from scratch, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient.
-    *   If the tool returns a recipe, adapt its name, ingredients, and steps. You still need to apply all science rules, dietary preferences, and fetch nutritional data for the adapted recipe. Set the 'youtubeLink' if the tool provides one.
-
-5.  **Final Output:**
-    *   Return a single, complete recipe in the specified JSON format. Do not worry about generating an image, that will be handled separately.
+4.  **Final Output**: Structure your response in the required JSON format. Ensure `recipeName`, `steps`, and `requiredIngredients` are always populated.
 `, 
 });
 
@@ -213,43 +158,25 @@ const generateRecipeFlow = ai.defineFlow(
     outputSchema: GenerateRecipeOutputSchema,
   },
   async input => {
-    const { output } = await generateRecipePrompt(input);
-    
-    if (!output) {
-        // Fallback to MealDB if primary generation fails
-        const mealDbTool = getRecipeFromMealDBTool();
-        const fallbackResult = await mealDbTool({ingredient: input.ingredients[0]});
-        
-        if (!fallbackResult || fallbackResult.length === 0) {
-           throw new Error("The AI failed to generate a recipe with the selected ingredients. Please try different ingredients or preferences.");
-        }
-        
-        const fallbackRecipe = fallbackResult[0];
+    const llmResponse = await generateRecipePrompt(input);
+    const recipe = llmResponse.output;
 
-        // Manually construct the output from the fallback
-        const requiredIngredients: string[] = [];
-        for (let i = 1; i <= 20; i++) {
-            const ingredient = fallbackRecipe[`strIngredient${i}` as keyof typeof fallbackRecipe];
-            const measure = fallbackRecipe[`strMeasure${i}` as keyof typeof fallbackRecipe];
-            if (ingredient && measure) {
-                requiredIngredients.push(`${measure.trim()} ${ingredient.trim()}`);
-            }
-        }
-        
-        const finalOutput: GenerateRecipeOutput = {
-            recipeName: fallbackRecipe.strMeal,
-            steps: fallbackRecipe.strInstructions.split('\r\n').filter(s => s.trim() !== ''),
-            requiredIngredients: requiredIngredients,
-            youtubeLink: fallbackRecipe.strYoutube,
-            imageUrl: fallbackRecipe.strMealThumb, // Use the image from MealDB
-        }
-        return finalOutput;
+    if (!recipe) {
+      throw new Error("Could not generate a recipe from the given ingredients. The model did not return a valid output.");
     }
     
-    // Generate the image after the recipe is created
-    const imageUrl = await generateRecipeImage(output.recipeName);
-    output.imageUrl = imageUrl;
+    // Generate image in parallel
+    const imageUrlPromise = generateRecipeImage({ recipeName: recipe.recipeName });
+
+    // Wait for image generation and assign the URL
+    try {
+      const imageResult = await imageUrlPromise;
+      recipe.imageUrl = imageResult.imageUrl;
+    } catch(e) {
+      console.error("Image generation failed, proceeding without an image.", e);
+      // Don't block recipe generation if image fails.
+    }
     
-    return output;
+    return recipe;
   }
 );

@@ -1,0 +1,75 @@
+
+'use server';
+/**
+ * @fileOverview An AI flow to validate ingredient combinations based on scientific and cultural rules.
+ *
+ * - validateIngredients - Checks if a list of ingredients is compatible.
+ * - ValidateIngredientsInput - The input type for the validateIngredients function.
+ * - ValidateIngredientsOutput - The return type for the validateIngredients function.
+ */
+
+import { ai } from '@/ai/genkit';
+import { recipeRules } from '@/lib/recipe-rules';
+import { z } from 'genkit';
+
+export const ValidateIngredientsInputSchema = z.object({
+  ingredients: z.array(z.string()).describe('A list of ingredients to validate.'),
+  // Optional: User profile context can be added here later (e.g., allergies)
+});
+export type ValidateIngredientsInput = z.infer<typeof ValidateIngredientsInputSchema>;
+
+export const ValidateIngredientsOutputSchema = z.object({
+  isValid: z.boolean().describe('Whether the combination is valid.'),
+  reason: z.string().optional().describe('The reason why the combination is invalid.'),
+  substitutions: z.array(z.object({
+    ingredientToReplace: z.string(),
+    substitute: z.string(),
+  })).optional().describe('Suggested substitutions if the combination is invalid.'),
+  ruleType: z.enum(['hard', 'soft']).optional().describe('The type of rule that was broken (hard or soft).'),
+});
+export type ValidateIngredientsOutput = z.infer<typeof ValidateIngredientsOutputSchema>;
+
+export async function validateIngredients(input: ValidateIngredientsInput): Promise<ValidateIngredientsOutput> {
+  return validateIngredientsFlow(input);
+}
+
+const prompt = ai.definePrompt({
+  name: 'validateIngredientsPrompt',
+  input: { schema: ValidateIngredientsInputSchema },
+  output: { schema: ValidateIngredientsOutputSchema },
+  prompt: `You are an expert culinary AI assistant that validates ingredient combinations.
+Your primary responsibility is to apply science-based and cultural cooking logic.
+Use the provided rules to determine if the user's selected ingredients are compatible.
+
+### Ruleset ###
+${JSON.stringify(recipeRules, null, 2)}
+### End Ruleset ###
+
+### User's Ingredients ###
+{{ingredients}}
+
+### Your Task ###
+1.  Analyze the user's ingredients against the "rules" and "categories" in the ruleset.
+2.  If you find an incompatibility (a broken rule), set "isValid" to false.
+3.  Provide the "reason" from the broken rule.
+4.  Suggest substitutions based on the "substitutions" field of the broken rule. Map the suggested substitute to the specific ingredient that needs to be replaced. For example if the rule is "Meat + Dairy", and the ingredients are "Chicken" and "Milk", the ingredient to replace is "Milk".
+5.  Specify the "ruleType" ('hard' or 'soft') of the rule that was broken.
+6.  If more than one rule is broken, prioritize the 'hard' rule.
+7.  If all ingredients are compatible, set "isValid" to true and omit the other fields.
+`,
+});
+
+const validateIngredientsFlow = ai.defineFlow(
+  {
+    name: 'validateIngredientsFlow',
+    inputSchema: ValidateIngredientsInputSchema,
+    outputSchema: ValidateIngredientsOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
+    if (!output) {
+      throw new Error('The AI failed to return a validation response.');
+    }
+    return output;
+  }
+);

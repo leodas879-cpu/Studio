@@ -1,6 +1,4 @@
-
 import type {Config} from 'tailwindcss';
-import { fontFamily } from "tailwindcss/defaultTheme"
 
 export default {
   darkMode: ['class'],
@@ -19,8 +17,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-literata)", ...fontFamily.sans],
-        headline: ["var(--font-literata)", ...fontFamily.sans],
+        body: ['var(--font-literata)', 'serif'],
+        headline: ['var(--font-literata)', 'serif'],
+        code: ['monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',

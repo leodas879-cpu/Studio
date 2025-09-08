@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff, KeyRound, HelpCircle, Smartphone, Laptop, Tablet, CheckCircle, X, ArrowRight, ChevronRight, LineChart, Eye, BarChart2, Mail, Link2, Database, Download, Trash2 } from "lucide-react";
+import { Upload, Camera, User, Settings, Shield, Activity, Lock, ChefHat, Heart, Flame, Clock, Award, Share2, VideoOff, KeyRound, HelpCircle, Smartphone, Laptop, Tablet, CheckCircle, X, Star, ArrowRight, ChevronRight, LineChart, Eye, BarChart2, Mail, Link2, Database, Download, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -64,7 +64,7 @@ const activityLogData = [
         color: "text-red-500"
     },
     {
-        icon: ChefHat, // Using ChefHat as a stand-in for Star
+        icon: Star,
         title: "Cooked Mediterranean Quinoa Bowl",
         description: "Rated 5 stars and left a review",
         category: "Recipe Cooked",
@@ -827,7 +827,7 @@ const ProfileSkeleton = () => (
                 <CardHeader>
                     <Skeleton className="h-6 w-3/4" />
                     <Skeleton className="h-4 w-1/2" />
-                </header>
+                </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
                         <Skeleton className="h-4 w-1/4" />

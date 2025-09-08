@@ -2,6 +2,7 @@
 "use server";
 
 import { generateRecipe, type GenerateRecipeInput, type GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
+import { validateIngredients, type ValidateIngredientsInput, type ValidateIngredientsOutput } from "@/ai/flows/validate-ingredients-flow";
 import { z } from "zod";
 
 const ActionInputSchema = z.object({
@@ -11,6 +12,16 @@ const ActionInputSchema = z.object({
   glutenFree: z.boolean().optional(),
   highProtein: z.boolean().optional(),
 });
+
+export async function handleValidateIngredients(input: ValidateIngredientsInput): Promise<{ data: ValidateIngredientsOutput | null; error: string | null }> {
+  try {
+    const result = await validateIngredients(input);
+    return { data: result, error: null };
+  } catch (e: any) {
+    console.error(e);
+    return { data: null, error: e.message || "An unexpected error occurred during validation." };
+  }
+}
 
 export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<{ data: GenerateRecipeOutput | null; error: string | null }> {
   const parsedInput = ActionInputSchema.safeParse(input);
@@ -22,10 +33,13 @@ export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<
 
   try {
     const recipe = await generateRecipe(parsedInput.data);
+    if (!recipe.recipeName || recipe.steps.length === 0) {
+      return { data: null, error: "The AI failed to generate a valid recipe with the selected ingredients. Please try again with different options." };
+    }
     return { data: recipe, error: null };
   } catch (e: any) {
     console.error(e);
-    // Pass the specific error message from the flow, or a generic one if it's an unexpected error
-    return { data: null, error: e.message || "An unexpected error occurred while generating the recipe. Please try again later." };
+    const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred.";
+    return { data: null, error: `An unexpected error occurred while generating the recipe: ${errorMessage}` };
   }
 }

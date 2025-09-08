@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
 import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
-import { handleGenerateRecipe } from "@/app/actions";
+import { handleGenerateRecipe, handleValidateIngredients } from "@/app/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -10,11 +11,15 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search } from "lucide-react";
+import { Sparkles, Search, TriangleAlert } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { useRecipeStore } from "@/store/recipe-store";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import type { ValidateIngredientsOutput } from "@/ai/flows/validate-ingredients-flow";
+
 
 const ingredientsData = [
     // Meats & Seafood (Not Vegetarian/Vegan)
@@ -128,6 +133,8 @@ export function RecipeGenerator() {
   const [generatedRecipe, setGeneratedRecipe] = useState<GenerateRecipeOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [validationResult, setValidationResult] = useState<ValidateIngredientsOutput | null>(null);
+  const [isValidationAlertOpen, setIsValidationAlertOpen] = useState(false);
 
   const { toast } = useToast();
   const { addRecentRecipe } = useRecipeStore();
@@ -137,15 +144,11 @@ export function RecipeGenerator() {
       if (dietaryPreferences.vegetarian && !ingredient.isVegetarian) return false;
       if (dietaryPreferences.vegan && !ingredient.isVegan) return false;
       if (dietaryPreferences.glutenFree && !ingredient.isGlutenFree) return false;
-      // Note: High protein is not a restrictive filter, so we don't filter out items based on it.
-      // We could potentially use it to rank or highlight ingredients in the future.
       return true;
     });
   }, [dietaryPreferences]);
 
   useEffect(() => {
-    // When available ingredients change due to filter toggles, 
-    // filter out any selected ingredients that are no longer available.
     const availableNames = new Set(availableIngredients.map(i => i.name));
     setSelectedIngredients(prev => prev.filter(name => availableNames.has(name)));
   }, [availableIngredients]);
@@ -163,18 +166,10 @@ export function RecipeGenerator() {
     setDietaryPreferences((prev) => ({ ...prev, [preference]: !prev[preference] }));
   };
 
-  const handleSubmit = async () => {
-    if (selectedIngredients.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "No Ingredients Selected",
-        description: "Please select at least one ingredient to start.",
-      });
-      return;
-    }
-    
+  const proceedWithGeneration = async () => {
     setIsLoading(true);
     setGeneratedRecipe(null);
+    setIsValidationAlertOpen(false);
 
     const input = {
       ingredients: selectedIngredients,
@@ -197,6 +192,42 @@ export function RecipeGenerator() {
     }
     
     setIsLoading(false);
+  };
+
+  const handleSubmit = async () => {
+    if (selectedIngredients.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "No Ingredients Selected",
+        description: "Please select at least one ingredient to start.",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    const validationResponse = await handleValidateIngredients({ ingredients: selectedIngredients });
+    setIsLoading(false);
+
+    if (validationResponse.error) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: validationResponse.error,
+      });
+      return;
+    }
+
+    if (validationResponse.data && !validationResponse.data.isValid) {
+      setValidationResult(validationResponse.data);
+      setIsValidationAlertOpen(true);
+    } else {
+      await proceedWithGeneration();
+    }
+  };
+
+  const handleSubstitution = (ingredientToReplace: string, substitute: string) => {
+    setSelectedIngredients(prev => [...prev.filter(i => i !== ingredientToReplace), substitute]);
+    proceedWithGeneration();
   };
 
   const filteredIngredients = availableIngredients.filter(ingredient =>
@@ -277,8 +308,46 @@ export function RecipeGenerator() {
 
           <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="w-full text-lg py-7 shadow-lg hover:shadow-primary/50 transition-shadow">
             <Sparkles className="mr-2 h-5 w-5" />
-            {isLoading ? 'Generating your masterpiece...' : 'Generate Recipe'}
+            {isLoading ? 'Thinking...' : 'Generate Recipe'}
           </Button>
+
+           {validationResult && !validationResult.isValid && (
+             <AlertDialog open={isValidationAlertOpen} onOpenChange={setIsValidationAlertOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <TriangleAlert className="text-destructive" />
+                      Incompatible Ingredients Detected
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {validationResult.reason}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  {validationResult.substitutions && validationResult.substitutions.length > 0 && (
+                     <div className="py-4">
+                       <h3 className="font-semibold mb-2">Suggested Substitutions:</h3>
+                       <div className="flex flex-wrap gap-2">
+                         {validationResult.substitutions.map(sub => (
+                           <Button 
+                            key={sub.substitute} 
+                            variant="outline"
+                            onClick={() => handleSubstitution(sub.ingredientToReplace, sub.substitute)}
+                           >
+                            Replace {sub.ingredientToReplace} with {sub.substitute}
+                           </Button>
+                         ))}
+                       </div>
+                     </div>
+                  )}
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Adjust Ingredients</AlertDialogCancel>
+                    {validationResult.ruleType === 'soft' && (
+                      <AlertDialogAction onClick={proceedWithGeneration}>Proceed Anyway</AlertDialogAction>
+                    )}
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+           )}
 
         </div>
 

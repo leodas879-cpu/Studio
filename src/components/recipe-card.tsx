@@ -39,7 +39,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
         <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden rounded-xl border">
             <div className="relative">
                 <Image 
-                    src={recipe.imageUrl || `https://dummyimage.com/600x400/f5a623/ffffff.png&text=${encodeURIComponent(recipe.recipeName)}`}
+                    src={`https://dummyimage.com/600x400/f5a623/ffffff.png&text=${encodeURIComponent(recipe.recipeName)}`}
                     alt={recipe.recipeName}
                     data-ai-hint="food dish"
                     width={600}
