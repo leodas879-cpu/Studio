@@ -6,7 +6,7 @@
  *
  * - generateRecipe - A function that handles the recipe generation process.
  * - GenerateRecipeInput - The input type for the generateRecipe function.
- * - GenerateRecipeOutput - The return type for the generateRecipe function.
+ * - GenerateRecipeOutput - The return type for the generateRecipeOutput function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -169,8 +169,10 @@ const generateRecipeFlow = ai.defineFlow(
             // Convert MealDB format to our schema
             const ingredientsList = [];
             for (let i = 1; i <= 20; i++) {
-                const ingredient = meal[`strIngredient${i}` as keyof typeof meal];
-                const measure = meal[`strMeasure${i}` as keyof typeof meal];
+                const ingredientKey = `strIngredient${i}` as keyof typeof meal;
+                const measureKey = `strMeasure${i}` as keyof typeof meal;
+                const ingredient = meal[ingredientKey];
+                const measure = meal[measureKey];
                 if (ingredient && ingredient.trim() !== '') {
                     ingredientsList.push(`${measure ? measure.trim() : ''} ${ingredient.trim()}`.trim());
                 }
@@ -195,5 +197,3 @@ const generateRecipeFlow = ai.defineFlow(
     return recipe;
   }
 );
-
-    
