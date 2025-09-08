@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -37,7 +38,7 @@ const MealDBDetailsSchema = z.object({
   strIngredient16: z.string().nullish(),
   strIngredient17: z.string().nullish(),
   strIngredient18: z.string().nullish(),
-  strIngredient19: z_string().nullish(),
+  strIngredient19: z.string().nullish(),
   strIngredient20: z.string().nullish(),
   strMeasure1: z.string().nullish(),
   strMeasure2: z.string().nullish(),
