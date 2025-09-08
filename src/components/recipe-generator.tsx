@@ -239,6 +239,7 @@ export function RecipeGenerator() {
     
     setIsLoading(true);
     setGeneratedRecipe(null);
+    setCompatibilityWarning(null);
 
     const input = {
       ingredients: selectedIngredients,
@@ -258,10 +259,12 @@ export function RecipeGenerator() {
     } else if (result.data) {
       if (!result.data.isCompatible) {
         setCompatibilityWarning(result.data);
+        setGeneratedRecipe(null);
       } else if (result.data.recipeName && result.data.steps && result.data.requiredIngredients) {
         const recipeWithPrefs = { ...result.data, ...dietaryPreferences };
         setGeneratedRecipe(recipeWithPrefs as GenerateRecipeOutput);
         addRecentRecipe(recipeWithPrefs);
+        setCompatibilityWarning(null);
       } else {
          toast({
             variant: "destructive",
@@ -396,5 +399,3 @@ export function RecipeGenerator() {
       </div>
   );
 }
-
-    

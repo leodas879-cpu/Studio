@@ -23,19 +23,28 @@ export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<
   try {
     const recipeData = await generateRecipe(parsedInput.data);
     
-    if (!recipeData.isCompatible) {
+    // This is a successful response, regardless of compatibility, so return data.
+    if (recipeData) {
       return { data: recipeData, error: null };
     }
     
-    if (!recipeData.recipeName || !recipeData.steps || recipeData.steps.length === 0) {
-      return { data: null, error: "The AI failed to generate a valid recipe with the selected ingredients. Please try again with different options." };
-    }
-    return { data: recipeData, error: null };
+    // This case should ideally not be reached if the AI flow is robust.
+    return { data: null, error: "The AI failed to generate a response. Please try again with different options." };
+
   } catch (e: any) {
-    console.error(e);
+    console.error("Error in handleGenerateRecipe:", e);
     let errorMessage = "An unexpected error occurred while generating the recipe. Please try again later.";
+    // Attempt to parse a more specific message if available
     if (e.message) {
-      errorMessage = `An unexpected error occurred while generating the recipe: ${e.message}`;
+      try {
+        // Genkit sometimes wraps errors in a JSON string
+        const errorObj = JSON.parse(e.message);
+        if (errorObj.message) {
+          errorMessage = `An error occurred: ${errorObj.message}`;
+        }
+      } catch (parseError) {
+         errorMessage = `An unexpected error occurred: ${e.message}`;
+      }
     }
     return { data: null, error: errorMessage };
   }
