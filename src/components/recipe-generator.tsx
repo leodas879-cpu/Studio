@@ -120,7 +120,7 @@ const ingredientsData = [
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export function RecipeGenerator() {
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>(['Chicken', 'Rice', 'Onions']);
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState({
     vegetarian: false,
     vegan: false,
@@ -165,6 +165,65 @@ export function RecipeGenerator() {
   
   const handleCancelAndClear = () => {
     setSelectedIngredients([]);
+    setCompatibilityWarning(null);
+  }
+
+  const handleApplySuggestion = (suggestion: string) => {
+    // Basic suggestion parsing - this can be improved with more structured AI output
+    const toRemove: string[] = [];
+    const toAdd: string[] = [];
+
+    const lcSuggestion = suggestion.toLowerCase();
+    
+    // Example: "Replace chicken with tofu"
+    if (lcSuggestion.includes('replace') && lcSuggestion.includes('with')) {
+      const parts = lcSuggestion.split('with');
+      const fromPart = parts[0].replace('replace', '').trim();
+      const toPart = parts[1].trim();
+
+      selectedIngredients.forEach(ing => {
+        if (fromPart.includes(ing.toLowerCase())) {
+          toRemove.push(ing);
+        }
+      });
+      
+      ingredientsData.forEach(data => {
+        if (toPart.includes(data.name.toLowerCase())) {
+          toAdd.push(data.name);
+        }
+      })
+
+    } else if (lcSuggestion.includes('substitute') && lcSuggestion.includes('with')) {
+        const parts = lcSuggestion.split('with');
+        const fromPart = parts[0].replace('substitute', '').trim();
+        const toPart = parts[1].split('for')[0].trim(); // "Substitute the milk with coconut milk..."
+
+        selectedIngredients.forEach(ing => {
+            if (fromPart.includes(ing.toLowerCase())) {
+                toRemove.push(ing);
+            }
+        });
+        
+        ingredientsData.forEach(data => {
+            if (toPart.includes(data.name.toLowerCase())) {
+                toAdd.push(data.name);
+            }
+        });
+    }
+
+    if (toRemove.length > 0 || toAdd.length > 0) {
+      setSelectedIngredients(prev => {
+        const newSelection = prev.filter(ing => !toRemove.includes(ing));
+        return [...new Set([...newSelection, ...toAdd])];
+      });
+    } else {
+        toast({
+            variant: "default",
+            title: "Suggestion applied",
+            description: "Please manually adjust if needed.",
+        })
+    }
+    
     setCompatibilityWarning(null);
   }
 
@@ -298,28 +357,32 @@ export function RecipeGenerator() {
             <Dialog open={!!compatibilityWarning} onOpenChange={() => setCompatibilityWarning(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl">
-                            <TriangleAlert className="text-destructive w-8 h-8" />
+                        <div className="flex justify-center">
+                            <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                                <TriangleAlert className="text-destructive w-8 h-8" />
+                            </div>
+                        </div>
+                        <DialogTitle className="text-center text-xl">
                             Incompatible Ingredients Detected
                         </DialogTitle>
-                        <DialogDescription className="pt-4 text-base text-muted-foreground">
+                        <DialogDescription className="pt-2 text-base text-muted-foreground text-center">
                             {compatibilityWarning?.compatibilityIssue}
                         </DialogDescription>
                     </DialogHeader>
                     {compatibilityWarning?.suggestedSubstitutions && compatibilityWarning.suggestedSubstitutions.length > 0 && (
-                        <div className="space-y-2 py-2">
-                            <h4 className="font-semibold">Suggested Substitutions:</h4>
+                        <div className="space-y-3 py-2">
+                            <h4 className="font-semibold text-center">Suggested Substitutions:</h4>
                             <div className="flex flex-col gap-2">
                                 {compatibilityWarning.suggestedSubstitutions.map((sub, index) => (
-                                    <Button key={index} variant="outline" className="justify-start">
+                                    <Button key={index} variant="outline" className="justify-center h-auto py-2" onClick={() => handleApplySuggestion(sub)}>
                                         {sub}
                                     </Button>
                                 ))}
                             </div>
                         </div>
                     )}
-                    <DialogFooter className="mt-4 sm:justify-end gap-2">
-                        <Button variant="ghost" onClick={handleCancelAndClear}>Cancel & Clear</Button>
+                    <DialogFooter className="mt-4 sm:justify-center gap-2 flex-col-reverse sm:flex-row">
+                        <Button variant="ghost" onClick={handleCancelAndClear}>Cancel & Clear All</Button>
                         <Button onClick={() => setCompatibilityWarning(null)}>Adjust Ingredients</Button>
                     </DialogFooter>
                 </DialogContent>
@@ -333,3 +396,5 @@ export function RecipeGenerator() {
       </div>
   );
 }
+
+    
