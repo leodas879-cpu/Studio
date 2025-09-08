@@ -169,10 +169,10 @@ const generateRecipeFlow = ai.defineFlow(
             // Convert MealDB format to our schema
             const ingredientsList = [];
             for (let i = 1; i <= 20; i++) {
-                const ingredientKey = `strIngredient${i}` as keyof typeof meal;
-                const measureKey = `strMeasure${i}` as keyof typeof meal;
-                const ingredient = meal[ingredientKey];
-                const measure = meal[measureKey];
+                const ingredientKey = 'strIngredient' + i;
+                const measureKey = 'strMeasure' + i;
+                const ingredient = (meal as any)[ingredientKey];
+                const measure = (meal as any)[measureKey];
                 if (ingredient && ingredient.trim() !== '') {
                     ingredientsList.push(`${measure ? measure.trim() : ''} ${ingredient.trim()}`.trim());
                 }
