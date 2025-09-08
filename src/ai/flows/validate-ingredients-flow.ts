@@ -4,30 +4,16 @@
  * @fileOverview An AI flow to validate ingredient combinations based on scientific and cultural rules.
  *
  * - validateIngredients - Checks if a list of ingredients is compatible.
- * - ValidateIngredientsInput - The input type for the validateIngredients function.
- * - ValidateIngredientsOutput - The return type for the validateIngredients function.
  */
 
 import { ai } from '@/ai/genkit';
 import { recipeRules } from '@/lib/recipe-rules';
-import { z } from 'genkit';
-
-export const ValidateIngredientsInputSchema = z.object({
-  ingredients: z.array(z.string()).describe('A list of ingredients to validate.'),
-  // Optional: User profile context can be added here later (e.g., allergies)
-});
-export type ValidateIngredientsInput = z.infer<typeof ValidateIngredientsInputSchema>;
-
-export const ValidateIngredientsOutputSchema = z.object({
-  isValid: z.boolean().describe('Whether the combination is valid.'),
-  reason: z.string().optional().describe('The reason why the combination is invalid.'),
-  substitutions: z.array(z.object({
-    ingredientToReplace: z.string(),
-    substitute: z.string(),
-  })).optional().describe('Suggested substitutions if the combination is invalid.'),
-  ruleType: z.enum(['hard', 'soft']).optional().describe('The type of rule that was broken (hard or soft).'),
-});
-export type ValidateIngredientsOutput = z.infer<typeof ValidateIngredientsOutputSchema>;
+import {
+  ValidateIngredientsInputSchema,
+  ValidateIngredientsOutputSchema,
+  type ValidateIngredientsInput,
+  type ValidateIngredientsOutput,
+} from '@/ai/schemas';
 
 export async function validateIngredients(input: ValidateIngredientsInput): Promise<ValidateIngredientsOutput> {
   return validateIngredientsFlow(input);

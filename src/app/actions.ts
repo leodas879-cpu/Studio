@@ -2,7 +2,8 @@
 "use server";
 
 import { generateRecipe, type GenerateRecipeInput, type GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
-import { validateIngredients, type ValidateIngredientsInput, type ValidateIngredientsOutput } from "@/ai/flows/validate-ingredients-flow";
+import { validateIngredients } from "@/ai/flows/validate-ingredients-flow";
+import type { ValidateIngredientsInput, ValidateIngredientsOutput } from "@/ai/schemas";
 import { z } from "zod";
 
 const ActionInputSchema = z.object({

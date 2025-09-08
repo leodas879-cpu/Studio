@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { useRecipeStore } from "@/store/recipe-store";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import type { ValidateIngredientsOutput } from "@/ai/flows/validate-ingredients-flow";
+import type { ValidateIngredientsOutput } from "@/ai/schemas";
 
 
 const ingredientsData = [
