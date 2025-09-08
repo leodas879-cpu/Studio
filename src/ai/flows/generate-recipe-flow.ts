@@ -12,7 +12,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { recipeRules } from '@/lib/recipe-rules';
-import { generateRecipeImage } from './generate-recipe-image-flow';
 
 
 const MealDBDetailsSchema = z.object({
@@ -147,7 +146,7 @@ const generateRecipePrompt = ai.definePrompt({
     *   Extract the ingredients and measurements.
     *   If the tool provides a YouTube link, include it in your final output.
 
-4.  **Final Output**: Structure your response in the required JSON format. Ensure `recipeName`, `steps`, and `requiredIngredients` are always populated.
+4.  **Final Output**: Structure your response in the required JSON format. Ensure \`recipeName\`, \`steps\`, and \`requiredIngredients\` are always populated.
 `, 
 });
 
@@ -163,18 +162,6 @@ const generateRecipeFlow = ai.defineFlow(
 
     if (!recipe) {
       throw new Error("Could not generate a recipe from the given ingredients. The model did not return a valid output.");
-    }
-    
-    // Generate image in parallel
-    const imageUrlPromise = generateRecipeImage({ recipeName: recipe.recipeName });
-
-    // Wait for image generation and assign the URL
-    try {
-      const imageResult = await imageUrlPromise;
-      recipe.imageUrl = imageResult.imageUrl;
-    } catch(e) {
-      console.error("Image generation failed, proceeding without an image.", e);
-      // Don't block recipe generation if image fails.
     }
     
     return recipe;
