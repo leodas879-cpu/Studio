@@ -139,7 +139,7 @@ const generateRecipePrompt = ai.definePrompt({
 
 2.  **Generate a Recipe from Scratch**: First, try to create a high-quality, original recipe using the provided ingredients and respecting all dietary preferences. The instructions must be detailed and easy for a home cook to follow.
 
-3.  **Fallback to Tool**: If and only if you absolutely cannot create a recipe from scratch, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient from the user's list.
+3.  **Fallback to Tool**: If and only if you absolutely cannot create a coherent and safe recipe from scratch with the given ingredients, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient from the user's list. Do not use the tool if you can generate a recipe yourself.
     *   If the tool returns a recipe, **adapt it**. Do not just copy it.
     *   Modify the recipe from the tool to meet all of the user's dietary preferences.
     *   Rewrite the instructions to be more detailed and clear.

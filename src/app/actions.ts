@@ -34,16 +34,17 @@ export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<
 
   try {
     const recipe = await generateRecipe(parsedInput.data);
-    // The flow itself now handles fallbacks, so we just check for final validity.
     if (!recipe || !recipe.recipeName || recipe.steps.length === 0) {
       return { data: null, error: "The AI failed to generate a valid recipe with the selected ingredients. Please try again with different options." };
     }
     return { data: recipe, error: null };
   } catch (e: any) {
     console.error(e);
+    // Be specific about the error type if possible, otherwise generic.
     const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred.";
+    if (errorMessage.includes("Schema validation failed")) {
+      return { data: null, error: `The AI returned a recipe in an unexpected format. Please try again. Details: ${errorMessage}` };
+    }
     return { data: null, error: `An unexpected error occurred while generating the recipe: ${errorMessage}` };
   }
 }
-
-    

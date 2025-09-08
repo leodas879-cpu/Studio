@@ -347,7 +347,7 @@ export function RecipeGenerator() {
                     <AlertDialogCancel>Adjust Ingredients</AlertDialogCancel>
                      <Button variant="destructive" onClick={handleCancelAndClear}>
                       <X className="mr-2" />
-                      Cancel &amp; Clear
+                      Cancel & Clear
                     </Button>
                     {validationResult.ruleType === 'soft' && (
                       <AlertDialogAction onClick={proceedWithGeneration}>Proceed Anyway</AlertDialogAction>
