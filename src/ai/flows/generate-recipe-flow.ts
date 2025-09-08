@@ -37,7 +37,7 @@ const MealDBDetailsSchema = z.object({
   strIngredient16: z.string().nullish(),
   strIngredient17: z.string().nullish(),
   strIngredient18: z.string().nullish(),
-  strIngredient19: z.string().nullish(),
+  strIngredient19: z_string().nullish(),
   strIngredient20: z.string().nullish(),
   strMeasure1: z.string().nullish(),
   strMeasure2: z.string().nullish(),
@@ -161,6 +161,36 @@ const generateRecipeFlow = ai.defineFlow(
 
     if (!recipe) {
       throw new Error("Could not generate a recipe from the given ingredients. The model did not return a valid output.");
+    }
+    
+    // Fallback if the AI fails to generate a recipe but doesn't use the tool.
+    if (!recipe.recipeName || recipe.steps.length === 0) {
+        const fallbackResult = await getRecipeFromMealDBTool({ ingredient: input.ingredients[0] });
+        if (fallbackResult.recipe) {
+            // A simplified conversion from MealDB to our schema.
+            // This could be made more robust.
+            const meal = fallbackResult.recipe;
+            return {
+                recipeName: meal.strMeal,
+                steps: meal.strInstructions.split('\r\n').filter(s => s.trim() !== ''),
+                requiredIngredients: Object.entries(meal)
+                    .filter(([key, value]) => key.startsWith('strIngredient') && value)
+                    .map(([key, value]) => {
+                        const measureKey = `strMeasure${key.replace('strIngredient', '')}` as keyof typeof meal;
+                        const measure = meal[measureKey];
+                        return `${measure} ${value}`;
+                    }),
+                alternativeSuggestions: [],
+                youtubeLink: meal.strYoutube || undefined,
+                imageUrl: meal.strMealThumb,
+                substitutionWarning: 'The AI chef had to look up a recipe for you. This one is from TheMealDB.'
+            };
+        }
+    }
+
+
+    if (!recipe) {
+      throw new Error("The AI failed to generate a recipe. Please try again with different ingredients.");
     }
     
     return recipe;
