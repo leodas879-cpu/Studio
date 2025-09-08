@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload } from "lucide-react";
+import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ import { useRecipeStore } from "@/store/recipe-store";
 import type { AnalyzeIngredientsOutput } from "@/ai/flows/analyze-ingredients-flow";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { cn } from "@/lib/utils";
 
 const ingredientsData = [
   {"id":"ing001","name":"chicken","category":"meat","tags":["animal-product","protein"]},
@@ -228,28 +230,28 @@ export function RecipeGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-
+  const { transcript, listening, isSpeechRecognitionSupported, startListening, stopListening } = useSpeechRecognition({
+      onTranscriptChanged: setSearchTerm
+  });
   const { toast } = useToast();
   const { addRecentRecipe } = useRecipeStore();
   
   const availableIngredients = useMemo(() => {
     return ingredientsData.filter(ingredient => {
-      if (dietaryPreferences.vegetarian && (ingredient.tags.includes('animal-product') || ingredient.category === 'meat' || ingredient.category === 'seafood')) {
-        // A simple vegetarian definition: no meat/fish. Eggs/dairy are ok.
-        if (ingredient.name === 'eggs' || ingredient.category === 'dairy' || ingredient.category === 'cheese' ) return true;
-        if(ingredient.tags.includes('animal-product') && !ingredient.tags.includes('dairy') && !ingredient.tags.includes('allergen:eggs')) return false;
+      if (dietaryPreferences.vegetarian) {
+        if (ingredient.tags.includes('animal-product') && !ingredient.tags.includes('dairy') && !ingredient.tags.includes('allergen:eggs') && ingredient.name !== 'honey') {
+          return false;
+        }
       }
-      if (dietaryPreferences.vegan && (ingredient.tags.includes('animal-product') || ingredient.tags.includes('dairy'))) {
-        return false;
+      if (dietaryPreferences.vegan) {
+        if (ingredient.tags.includes('animal-product') || ingredient.tags.includes('dairy')) {
+          return false;
+        }
       }
-      if (dietaryPreferences.glutenFree && (ingredient.tags.includes('gluten') || ingredient.tags.includes('contains:wheat'))) {
-         // Allow ingredients that *may* contain gluten unless strict GF is needed
-        if (ingredient.tags.includes('may-contain-gluten')) return true;
-        return false;
-      }
-      if (dietaryPreferences.highProtein && !ingredient.tags.includes('protein')) {
-        // This is a soft filter, so we can show items that are not explicitly tagged as high protein.
-        // A better approach would be to have a protein score. For now, we'll just filter what's not tagged.
+      if (dietaryPreferences.glutenFree) {
+        if (ingredient.tags.includes('gluten') || ingredient.tags.includes('contains:wheat')) {
+          return false;
+        }
       }
       return true;
     });
@@ -363,8 +365,6 @@ export function RecipeGenerator() {
     if (analysisResult.data) {
         setAnalysisResult(analysisResult.data);
         if (analysisResult.data.isCompatible) {
-            // If compatible, you could auto-generate, or wait for another user click.
-            // For now, let's proceed to generation automatically.
             if (!analysisResult.data.tasteSuggestions?.length) {
               proceedWithGeneration();
             }
@@ -377,7 +377,7 @@ export function RecipeGenerator() {
   const handleSubstitution = (ingredientToReplace: string, suggestion: string) => {
     setSelectedIngredients(prev => [...prev.filter(i => i !== ingredientToReplace), suggestion]);
     setShowIncompatibleDialog(false);
-    setAnalysisResult(null); // Clear analysis to re-run
+    setAnalysisResult(null);
   };
   
   const handleCancelAndClear = () => {
@@ -447,6 +447,21 @@ export function RecipeGenerator() {
     }
   };
 
+  const handleMicClick = () => {
+    if (!isSpeechRecognitionSupported) {
+        toast({
+            variant: "destructive",
+            title: "Browser Not Supported",
+            description: "Your browser does not support speech recognition.",
+        });
+        return;
+    }
+    if (listening) {
+        stopListening();
+    } else {
+        startListening();
+    }
+  }
 
   const filteredIngredients = availableIngredients.filter(ingredient =>
     ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -513,8 +528,8 @@ export function RecipeGenerator() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                 <Button variant="outline" size="icon">
-                    <Mic className="h-5 w-5" />
+                 <Button variant="outline" size="icon" onClick={handleMicClick}>
+                    <Mic className={cn("h-5 w-5", listening && "text-red-500 animate-pulse")} />
                  </Button>
               </div>
               <ScrollArea className="h-60 border rounded-md p-4">
@@ -556,27 +571,27 @@ export function RecipeGenerator() {
           </Card>
           
           {(isAnalysisLoading || isImageAnalysisLoading) && (
-             <Card className="bg-blue-50 border-blue-200">
+             <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-800"><Utensils className="animate-pulse" />{isImageAnalysisLoading ? 'Analyzing Image...' : 'Analyzing Ingredients...'}</CardTitle>
-                    <CardDescription className="text-blue-700">{isImageAnalysisLoading ? 'Our AI is identifying your ingredients from the photo.' : 'Our AI chef is checking your combination for taste and compatibility.'}</CardDescription>
+                    <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-300"><Utensils className="animate-pulse" />{isImageAnalysisLoading ? 'Analyzing Image...' : 'Analyzing Ingredients...'}</CardTitle>
+                    <CardDescription className="text-blue-700 dark:text-blue-400">{isImageAnalysisLoading ? 'Our AI is identifying your ingredients from the photo.' : 'Our AI chef is checking your combination for taste and compatibility.'}</CardDescription>
                 </CardHeader>
             </Card>
           )}
 
           {analysisResult && analysisResult.isCompatible && analysisResult.tasteSuggestions && analysisResult.tasteSuggestions.length > 0 && (
-             <Card className="bg-green-50 border-green-200">
+             <Card className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-800"><ThumbsUp/>Possible Combo!</CardTitle>
-                    <CardDescription className="text-green-700">This looks like a great start! Here are some suggestions to make it even better.</CardDescription>
+                    <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300"><ThumbsUp/>Possible Combo!</CardTitle>
+                    <CardDescription className="text-green-700 dark:text-green-400">This looks like a great start! Here are some suggestions to make it even better.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                     {analysisResult.tasteSuggestions.map((s, i) => (
-                         <div key={i} className="flex items-start gap-3 p-2 rounded-md bg-green-100/50">
-                            <Lightbulb className="w-5 h-5 mt-1 text-green-600" />
+                         <div key={i} className="flex items-start gap-3 p-2 rounded-md bg-green-100/50 dark:bg-green-900/30">
+                            <Lightbulb className="w-5 h-5 mt-1 text-green-600 dark:text-green-400" />
                             <div>
-                                <p className="font-semibold text-green-900">{s.suggestion}</p>
-                                <p className="text-sm text-green-800">{s.reason}</p>
+                                <p className="font-semibold text-green-900 dark:text-green-200">{s.suggestion}</p>
+                                <p className="text-sm text-green-800 dark:text-green-300">{s.reason}</p>
                             </div>
                         </div>
                     ))}
@@ -601,8 +616,8 @@ export function RecipeGenerator() {
           </div>
 
           <Button onClick={handleSubmit} disabled={isAnalysisLoading || isLoading || isImageAnalysisLoading} size="lg" className="w-full text-lg py-7 shadow-lg hover:shadow-primary/50 transition-shadow">
-            <Sparkles className="mr-2 h-5 w-5" />
-            {isAnalysisLoading ? 'Analyzing...' : (isLoading ? 'Generating your masterpiece...' : (isImageAnalysisLoading ? 'Analyzing Image...': 'Generate Recipe'))}
+            {(isAnalysisLoading || isLoading || isImageAnalysisLoading) ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
+            {isAnalysisLoading ? 'Analyzing...' : (isLoading ? 'Generating...' : (isImageAnalysisLoading ? 'Analyzing Image...': 'Generate Recipe'))}
           </Button>
 
         </div>
@@ -612,15 +627,17 @@ export function RecipeGenerator() {
         </div>
 
         <Dialog open={showIncompatibleDialog} onOpenChange={setShowIncompatibleDialog}>
-            <DialogContent className="max-w-md">
+             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-3 text-destructive text-xl font-headline">
-                        <TriangleAlert className="w-8 h-8" />
-                        Incompatible Ingredients
+                    <DialogTitle className="flex items-start gap-3 text-destructive text-xl font-headline">
+                        <TriangleAlert className="w-10 h-10" />
+                        <div className="mt-1">
+                            Incompatible Ingredients
+                            <DialogDescription className="pt-2 text-base text-left text-muted-foreground">
+                                {analysisResult?.incompatibilityReason}
+                            </DialogDescription>
+                        </div>
                     </DialogTitle>
-                    <DialogDescription className="pt-2 text-base text-left text-muted-foreground">
-                        {analysisResult?.incompatibilityReason}
-                    </DialogDescription>
                 </DialogHeader>
                 <div className="py-2">
                     <h3 className="font-semibold mb-3 text-lg font-headline">Suggested Substitutions:</h3>
@@ -637,10 +654,10 @@ export function RecipeGenerator() {
                         ))}
                     </div>
                 </div>
-                <DialogFooter className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" onClick={() => setShowIncompatibleDialog(false)}>Ignore & Proceed</Button>
+                <DialogFooter className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+                    <Button variant="outline" onClick={() => proceedWithGeneration()}>Ignore & Proceed Anyway</Button>
                     <DialogClose asChild>
-                      <Button variant="destructive" onClick={handleCancelAndClear}><X className="mr-2"/>Cancel & Clear</Button>
+                      <Button variant="ghost" onClick={() => setShowIncompatibleDialog(false)}>Let me fix it</Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>
@@ -649,3 +666,5 @@ export function RecipeGenerator() {
       </div>
   );
 }
+
+    

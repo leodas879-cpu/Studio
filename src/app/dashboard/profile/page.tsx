@@ -296,10 +296,6 @@ export default function ProfilePage() {
                     <AvatarImage src={localProfile.profilePhoto} alt="Profile Photo" />
                     <AvatarFallback><User className="w-16 h-16" /></AvatarFallback>
                   </Avatar>
-                   <div className="w-full p-6 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center">
-                    <User className="w-12 h-12 text-muted-foreground" />
-                    <p className="mt-2 text-sm text-muted-foreground">Drop photo here</p>
-                  </div>
                   <div className="flex gap-4 w-full">
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                     <Button variant="outline" className="w-full" onClick={triggerFileSelect}><Upload className="mr-2"/>Choose File</Button>
@@ -731,7 +727,7 @@ export default function ProfilePage() {
                             <Checkbox id="usage-data-collection" defaultChecked />
                             <div className="grid gap-1.5 leading-none">
                                 <label htmlFor="usage-data-collection" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Usage Data Collection</label>
-                                <p className="text-sm text-muted-foreground">Help improve ChefAI by sharing anonymous usage data</p>
+                                <p className="text-sm text-muted-foreground">Help ChefAI by sharing anonymous usage data</p>
                             </div>
                         </div>
                     </div>
@@ -847,3 +843,5 @@ const ProfileSkeleton = () => (
       </div>
     </div>
 )
+
+    
