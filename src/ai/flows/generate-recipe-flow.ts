@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -146,7 +145,7 @@ const generateRecipePrompt = ai.definePrompt({
     *   Extract the ingredients and measurements.
     *   If the tool provides a YouTube link, include it in your final output.
 
-4.  **Final Output**: Structure your response in the required JSON format. Ensure \`recipeName\`, \`steps\`, and \`requiredIngredients\` are always populated.
+4.  **Final Output**: You must only output a valid JSON object that conforms to the output schema. Do not add any other text, reasoning, or markdown formatting. Your entire response should be only the JSON object.
 `, 
 });
 

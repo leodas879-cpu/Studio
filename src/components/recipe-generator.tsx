@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -11,13 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search, TriangleAlert } from "lucide-react";
+import { Sparkles, Search, TriangleAlert, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { useRecipeStore } from "@/store/recipe-store";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import type { ValidateIngredientsOutput } from "@/ai/schemas";
 
 
@@ -230,6 +228,11 @@ export function RecipeGenerator() {
     proceedWithGeneration();
   };
 
+  const handleCancelAndClear = () => {
+    setIsValidationAlertOpen(false);
+    setSelectedIngredients([]);
+  };
+
   const filteredIngredients = availableIngredients.filter(ingredient =>
     ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -341,6 +344,10 @@ export function RecipeGenerator() {
                   )}
                   <AlertDialogFooter>
                     <AlertDialogCancel>Adjust Ingredients</AlertDialogCancel>
+                     <Button variant="destructive" onClick={handleCancelAndClear}>
+                      <X className="mr-2" />
+                      Cancel &amp; Clear
+                    </Button>
                     {validationResult.ruleType === 'soft' && (
                       <AlertDialogAction onClick={proceedWithGeneration}>Proceed Anyway</AlertDialogAction>
                     )}
