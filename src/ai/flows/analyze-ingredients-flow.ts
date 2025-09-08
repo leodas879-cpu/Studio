@@ -52,30 +52,27 @@ const analyzeIngredientsPrompt = ai.definePrompt({
   name: 'analyzeIngredientsPrompt',
   input: {schema: AnalyzeIngredientsInputSchema},
   output: {schema: AnalyzeIngredientsOutputSchema},
-  prompt: `You are an expert culinary scientist. Analyze the provided list of ingredients based on culinary science, taste profiles, and dietary restrictions.
+  prompt: `You are an expert culinary scientist and chef with a deep understanding of food chemistry, flavor profiles, and global cuisines. Analyze the provided list of ingredients based on these core principles.
 
 Ingredients: {{ingredients}}
 Dietary Preferences: {{dietaryPreferences}}
 
-Your task is to determine if these ingredients can be realistically combined to create a good recipe.
+Your task is to determine if these ingredients can be realistically combined to create a palatable and appealing recipe.
 
 **Rules:**
-1.  **Check for hard incompatibilities:**
-    *   Meat + Dairy (e.g., Chicken + Milk/Cheese): Flag as incompatible due to common dietary laws (Kosher) and potential digestive issues.
-    *   Seafood + Dairy: Flag as incompatible for similar reasons, as it's a common culinary anti-pattern.
-    *   Bitter Gourd + Milk: Flag as incompatible.
-    *   Any other scientifically or culinarily nonsensical pairings.
-2.  **Check for dietary preference violations:**
-    *   If vegetarian is true, flag any meat or fish.
-    *   If vegan is true, flag any animal products (meat, dairy, eggs, honey).
-3.  **If an incompatibility is found:**
+1.  **Analyze for Incompatibilities:** Based on your expert knowledge, identify any fundamental incompatibilities. These could be due to:
+    *   **Severe Flavor Clashes:** Pairings that are overwhelmingly bitter, sour, or otherwise unpleasant (e.g., Bitter Gourd and Coffee).
+    *   **Negative Chemical Reactions:** Combinations that would curdle, separate, or create a bad texture (e.g., high-acid ingredients with dairy without a stabilizing agent).
+    *   **Common Culinary Anti-Patterns:** Widely accepted pairings to avoid in most cuisines (e.g., seafood and dairy).
+    *   **Dietary Violations:** Ingredients that violate the user's stated dietary preferences (e.g., meat for a vegetarian).
+2.  **If an Incompatibility is Found:**
     *   Set \`isCompatible\` to \`false\`.
-    *   Provide a clear \`incompatibilityReason\`.
-    *   Provide a list of \`substitutions\`. For example, if the user has chicken and milk, suggest replacing milk with coconut milk or oat milk.
-4.  **If the combination is compatible but could be improved:**
+    *   Provide a clear, scientific, or culinary-based \`incompatibilityReason\`.
+    *   Provide a list of sensible \`substitutions\` to fix the core issue.
+3.  **If the Combination is Viable but Improvable:**
     *   Set \`isCompatible\` to \`true\`.
-    *   Provide a list of \`tasteSuggestions\` to make the dish better. For example, if the user only has chicken and rice, suggest adding onions, garlic, and herbs for a flavor base. Suggest adding a vegetable for balance.
-5.  **If the combination is compatible and well-balanced:**
+    *   Provide a list of helpful \`tasteSuggestions\` to enhance the dish. Focus on balancing flavors (e.g., adding an acid like lemon to cut richness), building a flavor base (e.g., suggesting onion and garlic), or adding texture.
+4.  **If the Combination is Excellent:**
     *   Set \`isCompatible\` to \`true\`.
     *   Return empty arrays for \`tasteSuggestions\` and \`substitutions\`.
 
