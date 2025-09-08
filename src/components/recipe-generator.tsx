@@ -123,7 +123,7 @@ const ingredientsData = [
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export function RecipeGenerator() {
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>(['Chicken', 'Rice', 'Onions']);
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [dietaryPreferences, setDietaryPreferences] = useState({
     vegetarian: false,
     vegan: false,
