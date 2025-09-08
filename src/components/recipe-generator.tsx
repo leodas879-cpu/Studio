@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff } from "lucide-react";
+import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -226,6 +226,7 @@ export function RecipeGenerator() {
   const [isImageAnalysisLoading, setIsImageAnalysisLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   const { toast } = useToast();
@@ -416,6 +417,36 @@ export function RecipeGenerator() {
     }
   }
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string;
+        
+        setIsImageAnalysisLoading(true);
+        const result = await handleAnalyzeImage({ photoDataUri: dataUrl, ingredientCatalog });
+        setIsImageAnalysisLoading(false);
+
+        if (result.error) {
+          toast({ variant: "destructive", title: "Image Analysis Failed", description: result.error });
+        } else if (result.data) {
+          const foundIngredients = result.data.identifiedIngredients;
+          setSelectedIngredients(prev => [...new Set([...prev, ...foundIngredients])]);
+          toast({
+            title: "Ingredients Identified!",
+            description: `Added ${foundIngredients.length} ingredients from your uploaded image.`,
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   const filteredIngredients = availableIngredients.filter(ingredient =>
     ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -428,37 +459,49 @@ export function RecipeGenerator() {
             <CardHeader>
               <CardTitle className="font-headline text-2xl">1. Choose Your Ingredients</CardTitle>
               <CardDescription>Select the items you have on hand. The list will update based on your diet.</CardDescription>
-                <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="mt-2"><Camera className="mr-2"/>Analyze with Camera</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Analyze Ingredients with Camera</DialogTitle>
-                            <DialogDescription>
-                                Point your camera at your ingredients and snap a photo.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div>
-                            <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted />
-                            <canvas ref={canvasRef} className="hidden" />
-                            {hasCameraPermission === false && (
-                                    <Alert variant="destructive" className="mt-4">
-                                    <VideoOff className="h-4 w-4" />
-                                    <AlertTitle>Camera Access Denied</AlertTitle>
-                                    <AlertDescription>
-                                        Please enable camera permissions in your browser settings.
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                        </div>
-                        <DialogFooter>
-                            <Button onClick={handleTakePicture} disabled={!hasCameraPermission || isImageAnalysisLoading}>
-                                {isImageAnalysisLoading ? 'Analyzing...' : 'Take Picture & Analyze'}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <div className="flex gap-2 mt-2">
+                    <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="flex-1"><Camera className="mr-2"/>Analyze with Camera</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Analyze Ingredients with Camera</DialogTitle>
+                                <DialogDescription>
+                                    Point your camera at your ingredients and snap a photo.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div>
+                                <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted />
+                                <canvas ref={canvasRef} className="hidden" />
+                                {hasCameraPermission === false && (
+                                        <Alert variant="destructive" className="mt-4">
+                                        <VideoOff className="h-4 w-4" />
+                                        <AlertTitle>Camera Access Denied</AlertTitle>
+                                        <AlertDescription>
+                                            Please enable camera permissions in your browser settings.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={handleTakePicture} disabled={!hasCameraPermission || isImageAnalysisLoading}>
+                                    {isImageAnalysisLoading ? 'Analyzing...' : 'Take Picture & Analyze'}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={handleFileChange} 
+                    />
+                    <Button variant="outline" className="flex-1" onClick={handleUploadClick}>
+                        <Upload className="mr-2"/>Upload Image
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative flex items-center gap-2">
@@ -606,5 +649,3 @@ export function RecipeGenerator() {
       </div>
   );
 }
-
-    
