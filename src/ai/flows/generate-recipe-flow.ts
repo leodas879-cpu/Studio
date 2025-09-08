@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -15,7 +14,7 @@ import {z} from 'genkit';
 const getRecipeFromMealDBTool = ai.defineTool(
   {
     name: 'getRecipeFromMealDB',
-    description: 'Get a recipe from TheMealDB API based on ingredients. Only use this if you cannot generate a recipe from the user provided ingredients.',
+    description: 'Get a recipe from TheMealDB API based on ingredients.',
     inputSchema: z.object({
       ingredients: z.array(z.string()).describe('A list of ingredients to search for.'),
     }),
@@ -25,7 +24,7 @@ const getRecipeFromMealDBTool = ai.defineTool(
     try {
       // TheMealDB API allows searching by a main ingredient. We'll use the first one.
       const mainIngredient = input.ingredients[0];
-      const response = await fetch("https://www.themealdb.com/api/json/v1/1/filter.php?i=" + mainIngredient);
+      const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${mainIngredient}`);
       if (!response.ok) {
         return { error: 'Failed to fetch from TheMealDB' };
       }
@@ -36,7 +35,7 @@ const getRecipeFromMealDBTool = ai.defineTool(
       }
       
       // Fetch the full details of the first meal found
-      const mealDetailsResponse = await fetch("https://www.themealdb.com/api/json/v1/1/lookup.php?i=" + data.meals[0].idMeal);
+      const mealDetailsResponse = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${data.meals[0].idMeal}`);
       const mealDetailsData = await mealDetailsResponse.json();
 
       return mealDetailsData.meals[0];
@@ -46,7 +45,6 @@ const getRecipeFromMealDBTool = ai.defineTool(
     }
   }
 );
-
 
 const GenerateRecipeInputSchema = z.object({
   ingredients: z.array(z.string()).describe('A list of ingredients available to use in the recipe.'),
@@ -58,15 +56,11 @@ const GenerateRecipeInputSchema = z.object({
 export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
 
 const GenerateRecipeOutputSchema = z.object({
-  recipeName: z.string().describe('The name of the generated recipe.').optional(),
-  steps: z.array(z.string()).describe('A list of detailed, step-by-step instructions to prepare the recipe. Each step should be very descriptive, explaining the what, how, and why. Mention expected colors, textures, and cooking times.').optional(),
-  requiredIngredients: z.array(z.string()).describe('A list of ingredients required for the recipe, including measurements.').optional(),
-  alternativeSuggestions: z.array(z.string()).describe('Alternative suggestions for the recipe, e.g., substitutions or variations.').optional(),
-  isCompatible: z.boolean().describe('Whether the provided ingredients are compatible.'),
-  compatibilityIssue: z.string().describe("If isCompatible is false, a detailed explanation of why the ingredients are not compatible.").optional(),
-  suggestedSubstitutions: z.array(z.string()).describe("If isCompatible is false, a list of suggested substitutions.").optional(),
+  recipeName: z.string().describe('The name of the generated recipe.'),
+  steps: z.array(z.string()).describe('A list of detailed, step-by-step instructions to prepare the recipe. Each step should be very descriptive, explaining the what, how, and why. Mention expected colors, textures, and cooking times.'),
+  requiredIngredients: z.array(z.string()).describe('A list of ingredients required for the recipe.'),
+  alternativeSuggestions: z.array(z.string()).describe('Alternative suggestions for the recipe, e.g., substitutions.'),
 });
-
 export type GenerateRecipeOutput = z.infer<typeof GenerateRecipeOutputSchema>;
 
 export async function generateRecipe(input: GenerateRecipeInput): Promise<GenerateRecipeOutput> {
@@ -78,34 +72,21 @@ const generateRecipePrompt = ai.definePrompt({
   input: {schema: GenerateRecipeInputSchema},
   output: {schema: GenerateRecipeOutputSchema},
   tools: [getRecipeFromMealDBTool],
-  prompt: `You are ChefAI, an advanced culinary assistant. Your job is to apply science-based cooking logic to validate ingredient compatibility and then generate a recipe.
+  prompt: `You are a world-class chef who specializes in writing clear, detailed, and easy-to-follow recipes for home cooks. Use the getRecipeFromMealDB tool to find a base recipe.
+  
+If the tool returns a recipe, adapt it to meet the user's dietary preferences ({{vegetarian}}, {{vegan}}, {{glutenFree}}, {{highProtein}}). Extract the recipe name, create a list of required ingredients with their measurements, and then write a new set of very detailed, step-by-step cooking instructions.
 
-First, analyze the user's selected ingredients for compatibility based on scientific, cultural, and dietary rules.
-- Hard Restrictions (always block):
-  - Meat + Dairy (e.g., Chicken + Milk/Cheese): Incompatible in Kosher traditions and can cause digestive issues for some.
-  - Fish + Dairy: Often avoided due to flavor clashes and potential digestive issues.
-  - Pork + Alcohol: Not compatible in Halal and Kosher diets.
-  - Bitter Gourd + Dairy: Can cause digestive issues.
+If the tool does not find a suitable recipe, generate a new one from scratch based on all the provided ingredients and dietary preferences.
 
-If the ingredients are NOT compatible:
-- Set "isCompatible" to false.
-- Provide a clear, friendly explanation in "compatibilityIssue".
-- Provide a list of safe, logical substitutions in "suggestedSubstitutions".
-- Do NOT generate a recipe. Do NOT include recipeName, steps, or other recipe fields.
+When creating the steps, be extremely detailed. Explain not just what to do, but how to do it. For example, instead of "cook onions", write "Sauté the chopped onions in olive oil over medium heat for 5-7 minutes, stirring occasionally, until they become translucent and fragrant." Mention specific timings, temperatures, and visual cues.
 
-If the ingredients ARE compatible:
-- Set "isCompatible" to true.
-- Generate a creative, delicious recipe.
-- If you are unable to generate a recipe from the given ingredients, you may use the getRecipeFromMealDBTool to find a base recipe. If the tool returns a recipe, you must adapt it to meet the user's dietary preferences ({{vegetarian}}, {{vegan}}, {{glutenFree}}, {{highProtein}}). Extract the recipe name, create a list of required ingredients with their measurements, and then write a new set of very detailed, step-by-step cooking instructions.
+Ingredients: {{ingredients}}
+Vegetarian: {{vegetarian}}
+Vegan: {{vegan}}
+Gluten-Free: {{glutenFree}}
+High-Protein: {{highProtein}}
 
-User's Ingredients: {{ingredients}}
-Dietary Preferences:
-- Vegetarian: {{vegetarian}}
-- Vegan: {{vegan}}
-- Gluten-Free: {{glutenFree}}
-- High-Protein: {{highProtein}}
-
-IMPORTANT: Your entire response must be ONLY the valid JSON object that conforms to the output schema. Do not add any other text, reasoning, or markdown formatting. Your entire response must be only the JSON object.
+Return the recipe in the specified JSON format.
 `, 
 });
 
