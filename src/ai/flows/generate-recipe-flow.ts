@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -6,100 +5,46 @@
  *
  * - generateRecipe - A function that handles the recipe generation process.
  * - GenerateRecipeInput - The input type for the generateRecipe function.
- * - GenerateRecipeOutput - The return type for the generateRecipeOutput function.
+ * - GenerateRecipeOutput - The return type for the generateRecipe function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { recipeRules } from '@/lib/recipe-rules';
-
-
-const MealDBDetailsSchema = z.object({
-  idMeal: z.string(),
-  strMeal: z.string(),
-  strInstructions: z.string(),
-  strMealThumb: z.string().url(),
-  strYoutube: z.string().url().nullish(),
-  strIngredient1: z.string().nullish(),
-  strIngredient2: z.string().nullish(),
-  strIngredient3: z.string().nullish(),
-  strIngredient4: z.string().nullish(),
-  strIngredient5: z.string().nullish(),
-  strIngredient6: z.string().nullish(),
-  strIngredient7: z.string().nullish(),
-  strIngredient8: z.string().nullish(),
-  strIngredient9: z.string().nullish(),
-  strIngredient10: z.string().nullish(),
-  strIngredient11: z.string().nullish(),
-  strIngredient12: z.string().nullish(),
-  strIngredient13: z.string().nullish(),
-  strIngredient14: z.string().nullish(),
-  strIngredient15: z.string().nullish(),
-  strIngredient16: z.string().nullish(),
-  strIngredient17: z.string().nullish(),
-  strIngredient18: z.string().nullish(),
-  strIngredient19: z.string().nullish(),
-  strIngredient20: z.string().nullish(),
-  strMeasure1: z.string().nullish(),
-  strMeasure2: z.string().nullish(),
-  strMeasure3: z.string().nullish(),
-  strMeasure4: z.string().nullish(),
-  strMeasure5: z.string().nullish(),
-  strMeasure6: z.string().nullish(),
-  strMeasure7: z.string().nullish(),
-  strMeasure8: z.string().nullish(),
-  strMeasure9: z.string().nullish(),
-  strMeasure10: z.string().nullish(),
-  strMeasure11: z.string().nullish(),
-  strMeasure12: z.string().nullish(),
-  strMeasure13: z.string().nullish(),
-  strMeasure14: z.string().nullish(),
-  strMeasure15: z.string().nullish(),
-  strMeasure16: z.string().nullish(),
-  strMeasure17: z.string().nullish(),
-  strMeasure18: z.string().nullish(),
-  strMeasure19: z.string().nullish(),
-  strMeasure20: z.string().nullish(),
-});
 
 const getRecipeFromMealDBTool = ai.defineTool(
   {
     name: 'getRecipeFromMealDB',
-    description: "Get a real, existing recipe from TheMealDB API. Use this as a fallback if you can't generate a good one from scratch.",
+    description: 'Get a recipe from TheMealDB API based on ingredients.',
     inputSchema: z.object({
-      ingredient: z.string().describe('A single primary ingredient to search for.'),
+      ingredients: z.array(z.string()).describe('A list of ingredients to search for.'),
     }),
-    outputSchema: z.object({
-      recipe: MealDBDetailsSchema.optional(),
-    }),
+    outputSchema: z.any(),
   },
   async (input) => {
     try {
-      const filterResponse = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${input.ingredient}`);
-      if (!filterResponse.ok) return { recipe: undefined };
-      const filterData = await filterResponse.json();
+      // TheMealDB API allows searching by a main ingredient. We'll use the first one.
+      const mainIngredient = input.ingredients[0];
+      const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${mainIngredient}`);
+      if (!response.ok) {
+        return { error: 'Failed to fetch from TheMealDB' };
+      }
+      const data = await response.json();
 
-      if (!filterData.meals || filterData.meals.length === 0) {
-        return { recipe: undefined };
+      if (!data.meals || data.meals.length === 0) {
+        return { info: 'No recipes found for the primary ingredient.' };
       }
       
-      const mealDetailsResponse = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${filterData.meals[0].idMeal}`);
-       if (!mealDetailsResponse.ok) return { recipe: undefined };
+      // Fetch the full details of the first meal found
+      const mealDetailsResponse = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${data.meals[0].idMeal}`);
       const mealDetailsData = await mealDetailsResponse.json();
-      
-      if (!mealDetailsData.meals || mealDetailsData.meals.length === 0) {
-          return { recipe: undefined };
-      }
 
-      return { recipe: mealDetailsData.meals[0] };
+      return mealDetailsData.meals[0];
     } catch (e) {
       console.error(e);
-      // Don't throw, just return undefined so the AI can handle it.
-      return { recipe: undefined };
+      return { error: 'An unexpected error occurred while fetching from TheMealDB.' };
     }
   }
 );
-
 
 const GenerateRecipeInputSchema = z.object({
   ingredients: z.array(z.string()).describe('A list of ingredients available to use in the recipe.'),
@@ -113,11 +58,8 @@ export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
 const GenerateRecipeOutputSchema = z.object({
   recipeName: z.string().describe('The name of the generated recipe.'),
   steps: z.array(z.string()).describe('A list of detailed, step-by-step instructions to prepare the recipe. Each step should be very descriptive, explaining the what, how, and why. Mention expected colors, textures, and cooking times.'),
-  requiredIngredients: z.array(z.string()).describe('A list of ingredients required for the recipe, including measurements.'),
-  alternativeSuggestions: z.array(z.string()).describe('Alternative suggestions for the recipe, e.g., substitutions or variations.'),
-  substitutionWarning: z.string().optional().describe('A warning message if an ingredient was substituted due to the science logic rules.'),
-  youtubeLink: z.string().url().optional().describe('A link to a YouTube tutorial for the recipe, if available.'),
-  imageUrl: z.string().url().optional().describe('URL of a generated image for the recipe.'),
+  requiredIngredients: z.array(z.string()).describe('A list of ingredients required for the recipe.'),
+  alternativeSuggestions: z.array(z.string()).describe('Alternative suggestions for the recipe, e.g., substitutions.'),
 });
 export type GenerateRecipeOutput = z.infer<typeof GenerateRecipeOutputSchema>;
 
@@ -130,23 +72,21 @@ const generateRecipePrompt = ai.definePrompt({
   input: {schema: GenerateRecipeInputSchema},
   output: {schema: GenerateRecipeOutputSchema},
   tools: [getRecipeFromMealDBTool],
-  prompt: `You are a world-class chef AI. Your goal is to create a delicious, safe, and logical recipe based on the user's ingredients and preferences.
+  prompt: `You are a world-class chef who specializes in writing clear, detailed, and easy-to-follow recipes for home cooks. Use the getRecipeFromMealDB tool to find a base recipe.
+  
+If the tool returns a recipe, adapt it to meet the user's dietary preferences ({{vegetarian}}, {{vegan}}, {{glutenFree}}, {{highProtein}}). Extract the recipe name, create a list of required ingredients with their measurements, and then write a new set of very detailed, step-by-step cooking instructions.
 
-### Instructions
-1.  **Analyze the user's request**:
-    *   Ingredients: {{ingredients}}
-    *   Dietary Preferences: Vegetarian: {{vegetarian}}, Vegan: {{vegan}}, Gluten-Free: {{glutenFree}}, High-Protein: {{highProtein}}
+If the tool does not find a suitable recipe, generate a new one from scratch based on all the provided ingredients and dietary preferences.
 
-2.  **Generate a Recipe from Scratch**: First, try to create a high-quality, original recipe using the provided ingredients and respecting all dietary preferences. The instructions must be detailed and easy for a home cook to follow.
+When creating the steps, be extremely detailed. Explain not just what to do, but how to do it. For example, instead of "cook onions", write "Sauté the chopped onions in olive oil over medium heat for 5-7 minutes, stirring occasionally, until they become translucent and fragrant." Mention specific timings, temperatures, and visual cues.
 
-3.  **Fallback to Tool**: If and only if you absolutely cannot create a coherent and safe recipe from scratch with the given ingredients, use the \`getRecipeFromMealDBTool\` with the most prominent ingredient from the user's list. Do not use the tool if you can generate a recipe yourself.
-    *   If the tool returns a recipe, **adapt it**. Do not just copy it.
-    *   Modify the recipe from the tool to meet all of the user's dietary preferences.
-    *   Rewrite the instructions to be more detailed and clear.
-    *   Extract the ingredients and measurements.
-    *   If the tool provides a YouTube link, include it in your final output.
+Ingredients: {{ingredients}}
+Vegetarian: {{vegetarian}}
+Vegan: {{vegan}}
+Gluten-Free: {{glutenFree}}
+High-Protein: {{highProtein}}
 
-4.  **Final Output**: You must only output a valid JSON object that conforms to the output schema. Do not add any other text, reasoning, or markdown formatting. Your entire response should be only the JSON object.
+Return the recipe in the specified JSON format.
 `, 
 });
 
@@ -157,43 +97,7 @@ const generateRecipeFlow = ai.defineFlow(
     outputSchema: GenerateRecipeOutputSchema,
   },
   async input => {
-    const llmResponse = await generateRecipePrompt(input);
-    let recipe = llmResponse.output;
-
-    // Fallback logic if the primary model fails to generate a valid recipe
-    if (!recipe || !recipe.recipeName || recipe.steps.length === 0) {
-        const fallbackResult = await getRecipeFromMealDBTool({ ingredient: input.ingredients[0] || 'chicken' });
-        
-        if (fallbackResult.recipe) {
-            const meal = fallbackResult.recipe;
-            // Convert MealDB format to our schema
-            const ingredientsList = [];
-            for (let i = 1; i <= 20; i++) {
-                const ingredientKey = 'strIngredient' + i;
-                const measureKey = 'strMeasure' + i;
-                const ingredient = (meal as any)[ingredientKey];
-                const measure = (meal as any)[measureKey];
-                if (ingredient && ingredient.trim() !== '') {
-                    ingredientsList.push(`${measure ? measure.trim() : ''} ${ingredient.trim()}`.trim());
-                }
-            }
-
-            recipe = {
-                recipeName: meal.strMeal,
-                steps: meal.strInstructions.split('\r\n').filter(s => s && s.trim() !== ''),
-                requiredIngredients: ingredientsList,
-                alternativeSuggestions: [],
-                youtubeLink: meal.strYoutube || undefined,
-                imageUrl: meal.strMealThumb,
-                substitutionWarning: 'The AI chef had to look up a recipe for you. This one is from TheMealDB and may not fully meet all dietary preferences.'
-            };
-        }
-    }
-
-    if (!recipe) {
-      throw new Error("The AI failed to generate or find a recipe for the selected ingredients. Please try again.");
-    }
-    
-    return recipe;
+    const {output} = await generateRecipePrompt(input);
+    return output!;
   }
 );
