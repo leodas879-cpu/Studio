@@ -1,3 +1,4 @@
+
 "use server";
 
 import { generateRecipe, type GenerateRecipeInput, type GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
@@ -20,13 +21,22 @@ export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<
   }
 
   try {
-    const recipe = await generateRecipe(parsedInput.data);
-    if (!recipe.recipeName || recipe.steps.length === 0) {
+    const recipeData = await generateRecipe(parsedInput.data);
+    
+    if (!recipeData.isCompatible) {
+      return { data: recipeData, error: null };
+    }
+    
+    if (!recipeData.recipeName || !recipeData.steps || recipeData.steps.length === 0) {
       return { data: null, error: "The AI failed to generate a valid recipe with the selected ingredients. Please try again with different options." };
     }
-    return { data: recipe, error: null };
-  } catch (e) {
+    return { data: recipeData, error: null };
+  } catch (e: any) {
     console.error(e);
-    return { data: null, error: "An unexpected error occurred while generating the recipe. Please try again later." };
+    let errorMessage = "An unexpected error occurred while generating the recipe. Please try again later.";
+    if (e.message) {
+      errorMessage = `An unexpected error occurred while generating the recipe: ${e.message}`;
+    }
+    return { data: null, error: errorMessage };
   }
 }

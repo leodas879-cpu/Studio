@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -10,11 +11,12 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search } from "lucide-react";
+import { Sparkles, Search, TriangleAlert } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { useRecipeStore } from "@/store/recipe-store";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const ingredientsData = [
     // Meats & Seafood (Not Vegetarian/Vegan)
@@ -128,6 +130,8 @@ export function RecipeGenerator() {
   const [generatedRecipe, setGeneratedRecipe] = useState<GenerateRecipeOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [compatibilityWarning, setCompatibilityWarning] = useState<GenerateRecipeOutput | null>(null);
+
 
   const { toast } = useToast();
   const { addRecentRecipe } = useRecipeStore();
@@ -137,15 +141,11 @@ export function RecipeGenerator() {
       if (dietaryPreferences.vegetarian && !ingredient.isVegetarian) return false;
       if (dietaryPreferences.vegan && !ingredient.isVegan) return false;
       if (dietaryPreferences.glutenFree && !ingredient.isGlutenFree) return false;
-      // Note: High protein is not a restrictive filter, so we don't filter out items based on it.
-      // We could potentially use it to rank or highlight ingredients in the future.
       return true;
     });
   }, [dietaryPreferences]);
 
   useEffect(() => {
-    // When available ingredients change due to filter toggles, 
-    // filter out any selected ingredients that are no longer available.
     const availableNames = new Set(availableIngredients.map(i => i.name));
     setSelectedIngredients(prev => prev.filter(name => availableNames.has(name)));
   }, [availableIngredients]);
@@ -162,6 +162,11 @@ export function RecipeGenerator() {
   const handlePreferenceToggle = (preference: keyof typeof dietaryPreferences) => {
     setDietaryPreferences((prev) => ({ ...prev, [preference]: !prev[preference] }));
   };
+  
+  const handleCancelAndClear = () => {
+    setSelectedIngredients([]);
+    setCompatibilityWarning(null);
+  }
 
   const handleSubmit = async () => {
     if (selectedIngredients.length === 0) {
@@ -182,6 +187,7 @@ export function RecipeGenerator() {
     };
 
     const result = await handleGenerateRecipe(input);
+    setIsLoading(false);
 
     if (result.error) {
       toast({
@@ -191,12 +197,21 @@ export function RecipeGenerator() {
       });
       setGeneratedRecipe(null);
     } else if (result.data) {
-      const recipeWithPrefs = { ...result.data, ...dietaryPreferences };
-      setGeneratedRecipe(recipeWithPrefs);
-      addRecentRecipe(recipeWithPrefs);
+      if (!result.data.isCompatible) {
+        setCompatibilityWarning(result.data);
+      } else if (result.data.recipeName && result.data.steps && result.data.requiredIngredients) {
+        const recipeWithPrefs = { ...result.data, ...dietaryPreferences };
+        setGeneratedRecipe(recipeWithPrefs as GenerateRecipeOutput);
+        addRecentRecipe(recipeWithPrefs);
+      } else {
+         toast({
+            variant: "destructive",
+            title: "Recipe Generation Failed",
+            description: "The AI could not generate a valid recipe with the selected ingredients. Please try again.",
+        });
+        setGeneratedRecipe(null);
+      }
     }
-    
-    setIsLoading(false);
   };
 
   const filteredIngredients = availableIngredients.filter(ingredient =>
@@ -279,6 +294,36 @@ export function RecipeGenerator() {
             <Sparkles className="mr-2 h-5 w-5" />
             {isLoading ? 'Generating your masterpiece...' : 'Generate Recipe'}
           </Button>
+
+            <Dialog open={!!compatibilityWarning} onOpenChange={() => setCompatibilityWarning(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl">
+                            <TriangleAlert className="text-destructive w-8 h-8" />
+                            Incompatible Ingredients Detected
+                        </DialogTitle>
+                        <DialogDescription className="pt-4 text-base text-muted-foreground">
+                            {compatibilityWarning?.compatibilityIssue}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {compatibilityWarning?.suggestedSubstitutions && compatibilityWarning.suggestedSubstitutions.length > 0 && (
+                        <div className="space-y-2 py-2">
+                            <h4 className="font-semibold">Suggested Substitutions:</h4>
+                            <div className="flex flex-col gap-2">
+                                {compatibilityWarning.suggestedSubstitutions.map((sub, index) => (
+                                    <Button key={index} variant="outline" className="justify-start">
+                                        {sub}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter className="mt-4 sm:justify-end gap-2">
+                        <Button variant="ghost" onClick={handleCancelAndClear}>Cancel & Clear</Button>
+                        <Button onClick={() => setCompatibilityWarning(null)}>Adjust Ingredients</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
         </div>
 
