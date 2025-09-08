@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Sun, Moon, Laptop } from "lucide-react";
+import { User, LogOut, Sun, Moon, Laptop } from "lucide-react";
 import Link from "next/link";
 import { useProfileStore } from "@/store/profile-store";
 import { useTheme } from "next-themes";
@@ -80,12 +80,6 @@ export function Header() {
               <DropdownMenuItem className="cursor-pointer">
                 <User className="mr-2" />
                 <span>Profile</span>
-              </DropdownMenuItem>
-            </Link>
-            <Link href="/dashboard/settings">
-              <DropdownMenuItem className="cursor-pointer">
-                <Settings className="mr-2" />
-                <span>Settings</span>
               </DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />

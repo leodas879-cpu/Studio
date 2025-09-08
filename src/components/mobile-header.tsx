@@ -8,9 +8,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, ChefHat, Home, Heart, Clock, User, Settings, LogOut, Sun, Moon, Laptop } from "lucide-react";
+import { Menu, ChefHat, Home, Heart, Clock, User, LogOut, Sun, Moon, Laptop } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "next-themes";
@@ -28,7 +27,6 @@ const recipeCollectionsLinks = [
 
 const accountLinks = [
     { href: "/dashboard/profile", label: "Profile", icon: User },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 const landingPageLinks = [
