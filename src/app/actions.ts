@@ -34,7 +34,8 @@ export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<
 
   try {
     const recipe = await generateRecipe(parsedInput.data);
-    if (!recipe.recipeName || recipe.steps.length === 0) {
+    // The flow itself now handles fallbacks, so we just check for final validity.
+    if (!recipe || !recipe.recipeName || recipe.steps.length === 0) {
       return { data: null, error: "The AI failed to generate a valid recipe with the selected ingredients. Please try again with different options." };
     }
     return { data: recipe, error: null };
@@ -44,3 +45,5 @@ export async function handleGenerateRecipe(input: GenerateRecipeInput): Promise<
     return { data: null, error: `An unexpected error occurred while generating the recipe: ${errorMessage}` };
   }
 }
+
+    

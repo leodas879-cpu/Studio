@@ -158,42 +158,42 @@ const generateRecipeFlow = ai.defineFlow(
   },
   async input => {
     const llmResponse = await generateRecipePrompt(input);
-    const recipe = llmResponse.output;
+    let recipe = llmResponse.output;
 
-    if (!recipe) {
-      throw new Error("Could not generate a recipe from the given ingredients. The model did not return a valid output.");
-    }
-    
-    // Fallback if the AI fails to generate a recipe but doesn't use the tool.
-    if (!recipe.recipeName || recipe.steps.length === 0) {
-        const fallbackResult = await getRecipeFromMealDBTool({ ingredient: input.ingredients[0] });
+    // Fallback logic if the primary model fails to generate a valid recipe
+    if (!recipe || !recipe.recipeName || recipe.steps.length === 0) {
+        const fallbackResult = await getRecipeFromMealDBTool({ ingredient: input.ingredients[0] || 'chicken' });
+        
         if (fallbackResult.recipe) {
-            // A simplified conversion from MealDB to our schema.
-            // This could be made more robust.
             const meal = fallbackResult.recipe;
-            return {
+            // Convert MealDB format to our schema
+            const ingredientsList = [];
+            for (let i = 1; i <= 20; i++) {
+                const ingredient = meal[`strIngredient${i}` as keyof typeof meal];
+                const measure = meal[`strMeasure${i}` as keyof typeof meal];
+                if (ingredient && ingredient.trim() !== '') {
+                    ingredientsList.push(`${measure ? measure.trim() : ''} ${ingredient.trim()}`.trim());
+                }
+            }
+
+            recipe = {
                 recipeName: meal.strMeal,
-                steps: meal.strInstructions.split('\r\n').filter(s => s.trim() !== ''),
-                requiredIngredients: Object.entries(meal)
-                    .filter(([key, value]) => key.startsWith('strIngredient') && value)
-                    .map(([key, value]) => {
-                        const measureKey = `strMeasure${key.replace('strIngredient', '')}` as keyof typeof meal;
-                        const measure = meal[measureKey];
-                        return `${measure} ${value}`;
-                    }),
+                steps: meal.strInstructions.split('\r\n').filter(s => s && s.trim() !== ''),
+                requiredIngredients: ingredientsList,
                 alternativeSuggestions: [],
                 youtubeLink: meal.strYoutube || undefined,
                 imageUrl: meal.strMealThumb,
-                substitutionWarning: 'The AI chef had to look up a recipe for you. This one is from TheMealDB.'
+                substitutionWarning: 'The AI chef had to look up a recipe for you. This one is from TheMealDB and may not fully meet all dietary preferences.'
             };
         }
     }
 
-
     if (!recipe) {
-      throw new Error("The AI failed to generate a recipe. Please try again with different ingredients.");
+      throw new Error("The AI failed to generate or find a recipe for the selected ingredients. Please try again.");
     }
     
     return recipe;
   }
 );
+
+    
