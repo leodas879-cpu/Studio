@@ -1,7 +1,11 @@
 import type {NextConfig} from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname),
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -29,7 +33,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https' ,
         hostname: 'github.com',
         port: '',
         pathname: '/**',
