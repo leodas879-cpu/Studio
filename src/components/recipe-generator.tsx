@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
 import { handleGenerateRecipe, handleAnalyzeIngredients, handleAnalyzeImage } from "@/app/actions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -627,9 +627,8 @@ export function RecipeGenerator() {
       });
       setGeneratedRecipe(null);
     } else if (result.data) {
-       const recipeWithPrefs = { ...result.data, ...dietaryPreferences };
-      setGeneratedRecipe(recipeWithPrefs);
-      addRecentRecipe(recipeWithPrefs);
+       addRecentRecipe(result.data);
+       setGeneratedRecipe(result.data);
     }
     
     setIsLoading(false);
@@ -784,7 +783,7 @@ export function RecipeGenerator() {
           <Card className="bg-card/70">
             <CardHeader>
               <CardTitle className="font-headline text-2xl">1. Choose Your Ingredients</CardTitle>
-              <CardDescription>Select the items you have on hand. The list will update based on your diet.</CardDescription>
+              <CardDescription>Select items from the list, or use your camera or mic to add them.</CardDescription>
                 <div className="flex flex-col gap-2 mt-2 sm:flex-row">
                     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
                         <DialogTrigger asChild>
@@ -828,12 +827,6 @@ export function RecipeGenerator() {
                         <Upload className="mr-2"/>Upload Image
                     </Button>
                 </div>
-                 {selectedIngredients.length > 0 && (
-                    <Button variant="ghost" size="sm" onClick={handleClearPantry} className="h-auto justify-start p-0 text-muted-foreground hover:bg-transparent">
-                        <X className="mr-1 h-4 w-4"/>
-                        Clear selected items
-                    </Button>
-                )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative flex items-center gap-2">
@@ -887,6 +880,39 @@ export function RecipeGenerator() {
             </CardContent>
           </Card>
 
+           <Card>
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="font-headline text-2xl">Your Pantry</CardTitle>
+                    {selectedIngredients.length > 0 && (
+                        <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground">
+                            <Trash2 className="mr-2 h-4 w-4"/>
+                            Clear All
+                        </Button>
+                    )}
+                </div>
+              <CardDescription>These are the ingredients you've selected.</CardDescription>
+            </CardHeader>
+            <CardContent className="min-h-[8rem] rounded-lg border bg-accent/30 p-4 transition-all">
+                {selectedIngredients.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                    {selectedIngredients.map((ingredient) => (
+                        <Badge key={ingredient} variant="default" className="flex items-center gap-2 px-3 py-1 text-base">
+                            {ingredient}
+                            <button onClick={() => handleIngredientToggle(ingredient)} className="rounded-full hover:bg-white/20 p-0.5">
+                                <X className="h-3 w-3" />
+                            </button>
+                        </Badge>
+                    ))}
+                    </div>
+                ) : (
+                    <div className="flex h-full items-center justify-center">
+                        <p className="p-4 text-center text-sm text-muted-foreground">Selected ingredients will appear here.</p>
+                    </div>
+                )}
+            </CardContent>
+          </Card>
+
           <Card className="bg-card/70">
             <CardHeader>
               <CardTitle className="font-headline text-2xl">2. Set Dietary Preferences</CardTitle>
@@ -937,29 +963,6 @@ export function RecipeGenerator() {
                 </CardContent>
             </Card>
           )}
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-headline text-xl font-semibold">Your Pantry</h3>
-                {selectedIngredients.length > 0 && (
-                    <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground">
-                        <Trash2 className="mr-2" />
-                        Clear All
-                    </Button>
-                )}
-            </div>
-            <div className="min-h-[6rem] rounded-lg border bg-card/50 p-4 transition-all">
-              {selectedIngredients.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {selectedIngredients.map((ingredient) => (
-                    <Badge key={ingredient} variant="secondary" className="px-3 py-1 text-base">{ingredient}</Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="p-4 text-center text-sm text-muted-foreground">Your selected ingredients will show up here.</p>
-              )}
-            </div>
-          </div>
 
           <Button onClick={handleSubmit} disabled={isAnalysisLoading || isLoading || isImageAnalysisLoading} size="lg" className="w-full py-7 text-lg shadow-lg transition-shadow hover:shadow-primary/50">
             {(isAnalysisLoading || isLoading || isImageAnalysisLoading) ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}

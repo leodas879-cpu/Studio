@@ -4,33 +4,54 @@ import type { GenerateRecipeOutput } from '@/ai/flows/generate-recipe-flow';
 import { getRecipes, saveRecipe, removeRecipe } from '@/services/recipe-service';
 
 // The GenerateRecipeOutput now has a structured ingredients list.
-// The app's internal `Recipe` type will continue to use a simple string array for now for compatibility.
-export type Recipe = Omit<GenerateRecipeOutput, 'requiredIngredients' | 'alternativeSuggestions'> & {
-  requiredIngredients: string[];
-  alternativeSuggestions?: string[];
-  vegetarian?: boolean;
-  vegan?: boolean;
-  glutenFree?: boolean;
+// The app's internal `Recipe` type will convert this to a simple string array for compatibility.
+export type Recipe = Omit<GenerateRecipeOutput, 'requiredIngredients'> & {
+  requiredIngredients: string[]; // Keep as string array for display components
   isFavorite?: boolean;
 };
 
 interface RecipeStore {
   recentRecipes: Recipe[];
   favoriteRecipes: Recipe[];
-  addRecentRecipe: (recipe: Recipe) => void;
+  addRecentRecipe: (recipe: GenerateRecipeOutput) => void;
   toggleFavorite: (recipe: Recipe, uid: string) => Promise<void>;
   loadRecipes: (uid: string) => Promise<void>;
-  setSelectedRecipe: (recipe: Recipe | null) => void;
+  setSelectedRecipe: (recipe: GenerateRecipeOutput | null) => void;
   selectedRecipe: Recipe | null;
   clearRecipes: () => void;
 }
 
-// Helper to convert recipe types for storage/display
-function toAppRecipe(recipe: any): Recipe {
+// Helper to convert the AI's structured ingredient output to the simple string array
+// that the app's components (like RecipeDisplay) expect.
+function toAppRecipe(recipe: GenerateRecipeOutput): Recipe {
     return {
         ...recipe,
-        requiredIngredients: recipe.requiredIngredients.map((ing: any) => typeof ing === 'string' ? ing : `${ing.quantity} ${ing.name}`),
+        requiredIngredients: recipe.requiredIngredients.map((ing) => `${ing.quantity} ${ing.name}`),
+    };
+}
+
+// Helper to convert a `Recipe` object back into the format that Firestore expects.
+function toDBRecipe(recipe: Recipe): GenerateRecipeOutput & { isFavorite?: boolean } {
+    // This conversion is lossy but acceptable for saving favorites.
+    // A more robust solution might refactor how ingredients are stored everywhere.
+    const structuredIngredients = recipe.requiredIngredients.map(ingStr => {
+        const parts = ingStr.split(' ');
+        const quantity = parts.slice(0, -1).join(' ');
+        const name = parts.slice(-1)[0];
+        return { name: name || ingStr, quantity: quantity || '' };
+    });
+
+    return {
+        recipeName: recipe.recipeName,
+        cuisine: recipe.cuisine,
+        requiredIngredients: structuredIngredients,
+        steps: recipe.steps,
+        servingSuggestions: recipe.servingSuggestions,
+        prepTime: recipe.prepTime,
+        cookTime: recipe.cookTime,
+        servings: recipe.servings,
         alternativeSuggestions: recipe.alternativeSuggestions || [],
+        isFavorite: recipe.isFavorite,
     };
 }
 
@@ -52,17 +73,17 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   toggleFavorite: async (recipe: Recipe, uid: string) => {
     const state = get();
     const isFavorite = state.favoriteRecipes.some(r => r.recipeName === recipe.recipeName);
-    const appRecipe = toAppRecipe(recipe);
     
     if (isFavorite) {
-      await removeRecipe(uid, appRecipe.recipeName);
+      await removeRecipe(uid, recipe.recipeName);
       set({ 
-        favoriteRecipes: state.favoriteRecipes.filter(r => r.recipeName !== appRecipe.recipeName) 
+        favoriteRecipes: state.favoriteRecipes.filter(r => r.recipeName !== recipe.recipeName) 
       });
     } else {
-      await saveRecipe(uid, { ...appRecipe, isFavorite: true });
+      const dbRecipe = toDBRecipe({ ...recipe, isFavorite: true });
+      await saveRecipe(uid, dbRecipe);
       set({ 
-        favoriteRecipes: [{ ...appRecipe, isFavorite: true }, ...state.favoriteRecipes]
+        favoriteRecipes: [{ ...recipe, isFavorite: true }, ...state.favoriteRecipes]
       });
     }
   },
