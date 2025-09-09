@@ -3,10 +3,7 @@ import { create } from 'zustand';
 import type { GenerateRecipeOutput } from '@/ai/flows/generate-recipe-flow';
 import { getRecipes, saveRecipe, removeRecipe } from '@/services/recipe-service';
 
-// The GenerateRecipeOutput now has a structured ingredients list.
-// The app's internal `Recipe` type will convert this to a simple string array for compatibility.
-export type Recipe = Omit<GenerateRecipeOutput, 'requiredIngredients'> & {
-  requiredIngredients: string[]; // Keep as string array for display components
+export type Recipe = GenerateRecipeOutput & {
   isFavorite?: boolean;
 };
 
@@ -21,36 +18,16 @@ interface RecipeStore {
   clearRecipes: () => void;
 }
 
-// Helper to convert the AI's structured ingredient output to the simple string array
-// that the app's components (like RecipeDisplay) expect.
+// The app's `Recipe` type now directly matches the `GenerateRecipeOutput` from the AI flow.
+// No conversion is needed anymore.
 function toAppRecipe(recipe: GenerateRecipeOutput): Recipe {
-    return {
-        ...recipe,
-        requiredIngredients: recipe.requiredIngredients.map((ing) => `${ing.quantity} ${ing.name}`),
-    };
+    return recipe;
 }
 
 // Helper to convert a `Recipe` object back into the format that Firestore expects.
 function toDBRecipe(recipe: Recipe): GenerateRecipeOutput & { isFavorite?: boolean } {
-    // This conversion is lossy but acceptable for saving favorites.
-    // A more robust solution might refactor how ingredients are stored everywhere.
-    const structuredIngredients = recipe.requiredIngredients.map(ingStr => {
-        const parts = ingStr.split(' ');
-        const quantity = parts.slice(0, -1).join(' ');
-        const name = parts.slice(-1)[0];
-        return { name: name || ingStr, quantity: quantity || '' };
-    });
-
     return {
-        recipeName: recipe.recipeName,
-        cuisine: recipe.cuisine,
-        requiredIngredients: structuredIngredients,
-        steps: recipe.steps,
-        servingSuggestions: recipe.servingSuggestions,
-        prepTime: recipe.prepTime,
-        cookTime: recipe.cookTime,
-        servings: recipe.servings,
-        alternativeSuggestions: recipe.alternativeSuggestions || [],
+        ...recipe,
         isFavorite: recipe.isFavorite,
     };
 }

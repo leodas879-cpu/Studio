@@ -102,9 +102,9 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
                 <h3 className="text-2xl font-semibold mb-4 font-headline text-center">Ingredients</h3>
                 <ul className="space-y-3">
                     {recipe.requiredIngredients.map((ingredient, index) => (
-                    <li key={`${ingredient}-${index}`} className="flex items-start gap-3">
+                    <li key={`${ingredient.name}-${index}`} className="flex items-start gap-3">
                         <span className="mt-1.5 h-2 w-2 rounded-full bg-primary/80 shrink-0"></span>
-                        <span className="text-base">{ingredient}</span>
+                        <span className="text-base">{ingredient.quantity} {ingredient.name}</span>
                     </li>
                     ))}
                 </ul>
