@@ -912,10 +912,31 @@ export function RecipeGenerator() {
             </CardContent>
           </Card>
 
+          <Card className="bg-card/70">
+            <CardHeader>
+              <CardTitle className="font-headline text-2xl">2. Set Dietary Preferences</CardTitle>
+              <CardDescription>Tailor the recipe to your dietary needs.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {Object.keys(dietaryPreferences).map((key) => (
+                <div key={key} className="flex items-center justify-between rounded-md border p-3">
+                  <Label htmlFor={key} className="capitalize font-medium">
+                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                  </Label>
+                  <Switch
+                    id={key}
+                    checked={dietaryPreferences[key as keyof typeof dietaryPreferences]}
+                    onCheckedChange={() => handlePreferenceToggle(key as keyof typeof dietaryPreferences)}
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
            <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle className="font-headline text-2xl">Your Pantry</CardTitle>
+                    <CardTitle className="font-headline text-2xl">3. Your Pantry</CardTitle>
                     {selectedIngredients.length > 0 && (
                         <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground">
                             <Trash2 className="mr-2 h-4 w-4"/>
@@ -949,27 +970,6 @@ export function RecipeGenerator() {
                     {isAnalysisLoading ? 'Checking...' : 'Check Compatibility'}
                 </Button>
              </CardFooter>
-          </Card>
-
-          <Card className="bg-card/70">
-            <CardHeader>
-              <CardTitle className="font-headline text-2xl">2. Set Dietary Preferences</CardTitle>
-              <CardDescription>Tailor the recipe to your dietary needs.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {Object.keys(dietaryPreferences).map((key) => (
-                <div key={key} className="flex items-center justify-between rounded-md border p-3">
-                  <Label htmlFor={key} className="capitalize font-medium">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                  </Label>
-                  <Switch
-                    id={key}
-                    checked={dietaryPreferences[key as keyof typeof dietaryPreferences]}
-                    onCheckedChange={() => handlePreferenceToggle(key as keyof typeof dietaryPreferences)}
-                  />
-                </div>
-              ))}
-            </CardContent>
           </Card>
           
           {(isAnalysisLoading || isImageAnalysisLoading) && !analysisResult && (
@@ -1060,4 +1060,6 @@ export function RecipeGenerator() {
 }
 
     
+    
+
     
