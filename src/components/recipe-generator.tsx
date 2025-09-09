@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2, Trash2, ArrowRight, ShoppingCart } from "lucide-react";
+import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2, Trash2, ArrowRight, ShoppingCart, CheckCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -275,7 +275,6 @@ const ingredientsData = [
 {"id":"ing320","name":"ketchup","category":"condiment","tags":["sweet"]},
 {"id":"ing321","name":"lemongrass","category":"herb","tags":["aromatic"]},
 {"id":"ing322","name":"macadamia nuts","category":"nut","tags":["allergen:tree-nut"]},
-{"id":"ing323","name":"malt vinegar","category":"condiment","tags":["acid"]},
 {"id":"ing324","name":"mascarpone","category":"cheese","tags":["dairy"]},
 {"id":"ing325","name":"mayonnaise","category":"condiment","tags":["allergen:eggs"]},
 {"id":"ing326","name":"mirin","category":"condiment","tags":["sweet","rice-wine"]},
@@ -634,12 +633,12 @@ export function RecipeGenerator() {
     setIsLoading(false);
   }
 
-  const handleSubmit = async () => {
+  const handleCheckCompatibility = async () => {
     if (selectedIngredients.length === 0) {
       toast({
         variant: "destructive",
         title: "No Ingredients Selected",
-        description: "Please select at least one ingredient to start.",
+        description: "Please select at least one ingredient to check.",
       });
       return;
     }
@@ -653,25 +652,33 @@ export function RecipeGenerator() {
       dietaryPreferences,
     };
     
-    const analysisResult = await handleAnalyzeIngredients(analysisInput);
+    const analysisResultData = await handleAnalyzeIngredients(analysisInput);
     setIsAnalysisLoading(false);
 
-    if (analysisResult.error) {
-        toast({ variant: "destructive", title: "Analysis Failed", description: analysisResult.error });
+    if (analysisResultData.error) {
+        toast({ variant: "destructive", title: "Analysis Failed", description: analysisResultData.error });
         return;
     }
 
-    if (analysisResult.data) {
-        setAnalysisResult(analysisResult.data);
-        if (analysisResult.data.isCompatible) {
-            if (!analysisResult.data.tasteSuggestions?.length) {
-              proceedWithGeneration();
-            }
-        } else {
+    if (analysisResultData.data) {
+        setAnalysisResult(analysisResultData.data);
+        if (!analysisResultData.data.isCompatible) {
             setShowIncompatibleDialog(true);
         }
     }
   };
+
+  const handleGenerateClick = () => {
+    if (selectedIngredients.length === 0) {
+        toast({
+            variant: "destructive",
+            title: "No Ingredients Selected",
+            description: "Please select at least one ingredient to generate a recipe.",
+        });
+        return;
+    }
+    proceedWithGeneration();
+  }
   
   const handleApplyAllSubstitutions = () => {
     if (!analysisResult?.substitutions) return;
@@ -687,8 +694,6 @@ export function RecipeGenerator() {
     setSelectedIngredients(newIngredients);
     setShowIncompatibleDialog(false);
     setAnalysisResult(null);
-    // You might want to automatically re-run analysis or generation here
-    // For now, we'll let the user click "Generate" again.
   };
 
   const handleClearPantry = () => {
@@ -911,6 +916,12 @@ export function RecipeGenerator() {
                     </div>
                 )}
             </CardContent>
+             <CardFooter>
+                 <Button onClick={handleCheckCompatibility} disabled={isAnalysisLoading || isLoading || isImageAnalysisLoading} className="w-full">
+                    {isAnalysisLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                    {isAnalysisLoading ? 'Checking...' : 'Check Compatibility'}
+                </Button>
+             </CardFooter>
           </Card>
 
           <Card className="bg-card/70">
@@ -934,7 +945,7 @@ export function RecipeGenerator() {
             </CardContent>
           </Card>
           
-          {(isAnalysisLoading || isImageAnalysisLoading) && (
+          {(isAnalysisLoading || isImageAnalysisLoading) && !analysisResult && (
              <Card className="border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-300"><Utensils className="animate-pulse" />{isImageAnalysisLoading ? 'Analyzing Image...' : 'Analyzing Ingredients...'}</CardTitle>
@@ -943,30 +954,35 @@ export function RecipeGenerator() {
             </Card>
           )}
 
-          {analysisResult && analysisResult.isCompatible && analysisResult.tasteSuggestions && analysisResult.tasteSuggestions.length > 0 && (
+          {analysisResult && analysisResult.isCompatible && (
              <Card className="border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300"><ThumbsUp/>Possible Combo!</CardTitle>
-                    <CardDescription className="text-green-700 dark:text-green-400">This looks like a great start! Here are some suggestions to make it even better.</CardDescription>
+                    <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300"><ThumbsUp/>Great Combination!</CardTitle>
+                    <CardDescription className="text-green-700 dark:text-green-400">
+                        {analysisResult.tasteSuggestions && analysisResult.tasteSuggestions.length > 0 
+                            ? "This looks like a great start! Here are some suggestions to make it even better."
+                            : "Your ingredients are compatible and should make a great dish! You're ready to generate a recipe."}
+                    </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                    {analysisResult.tasteSuggestions.map((s, i) => (
-                         <div key={i} className="flex items-start gap-3 rounded-md bg-green-100/50 p-2 dark:bg-green-900/30">
-                            <Lightbulb className="mt-1 h-5 w-5 text-green-600 dark:text-green-400" />
-                            <div>
-                                <p className="font-semibold text-green-900 dark:text-green-200">{s.suggestion}</p>
-                                <p className="text-sm text-green-800 dark:text-green-300">{s.reason}</p>
+                {analysisResult.tasteSuggestions && analysisResult.tasteSuggestions.length > 0 && (
+                    <CardContent className="space-y-3">
+                        {analysisResult.tasteSuggestions.map((s, i) => (
+                            <div key={i} className="flex items-start gap-3 rounded-md bg-green-100/50 p-2 dark:bg-green-900/30">
+                                <Lightbulb className="mt-1 h-5 w-5 text-green-600 dark:text-green-400" />
+                                <div>
+                                    <p className="font-semibold text-green-900 dark:text-green-200">{s.suggestion}</p>
+                                    <p className="text-sm text-green-800 dark:text-green-300">{s.reason}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                    <Button onClick={proceedWithGeneration} className="mt-4 w-full">Continue to Recipe</Button>
-                </CardContent>
+                        ))}
+                    </CardContent>
+                )}
             </Card>
           )}
 
-          <Button onClick={handleSubmit} disabled={isAnalysisLoading || isLoading || isImageAnalysisLoading} size="lg" className="w-full py-7 text-lg shadow-lg transition-shadow hover:shadow-primary/50">
-            {(isAnalysisLoading || isLoading || isImageAnalysisLoading) ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-            {isAnalysisLoading ? 'Analyzing...' : (isLoading ? 'Generating...' : (isImageAnalysisLoading ? 'Analyzing Image...': 'Generate Recipe'))}
+          <Button onClick={handleGenerateClick} disabled={isAnalysisLoading || isLoading || isImageAnalysisLoading} size="lg" className="w-full py-7 text-lg shadow-lg transition-shadow hover:shadow-primary/50">
+            {(isLoading) ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
+            {isLoading ? 'Generating...' : 'Generate Recipe'}
           </Button>
 
         </div>
@@ -1015,3 +1031,5 @@ export function RecipeGenerator() {
       </div>
   );
 }
+
+    
