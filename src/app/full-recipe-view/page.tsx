@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense } from 'react';
@@ -64,8 +65,8 @@ function LoadingFallback() {
 
 export default function FullRecipeView() {
   return (
-    <div>
-      <h1 className="text-4xl font-bold font-headline tracking-tight mb-8">Full Recipe View</h1>
+    <div className="space-y-8">
+      <h1 className="text-4xl font-bold font-headline tracking-tight">Full Recipe View</h1>
       <Suspense fallback={<LoadingFallback />}>
         <FullRecipeViewContent />
       </Suspense>

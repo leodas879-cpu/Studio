@@ -1,8 +1,14 @@
 
 "use client";
 
-import { RecipeGenerator } from '@/components/recipe-generator';
+import dynamic from 'next/dynamic';
 import { useProfileStore } from '@/store/profile-store';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const RecipeGenerator = dynamic(() => import('@/components/recipe-generator').then(mod => mod.RecipeGenerator), {
+  ssr: false,
+  loading: () => <RecipeGeneratorSkeleton />
+});
 
 export default function Dashboard() {
   const { profile } = useProfileStore();
@@ -19,3 +25,16 @@ export default function Dashboard() {
     </div>
   );
 }
+
+const RecipeGeneratorSkeleton = () => (
+  <div className="grid grid-cols-1 gap-8 items-start lg:grid-cols-2">
+    <div className="space-y-6">
+      <Skeleton className="h-64 w-full" />
+      <Skeleton className="h-48 w-full" />
+      <Skeleton className="h-16 w-full" />
+    </div>
+    <div className="lg:sticky lg:top-8">
+      <Skeleton className="h-[500px] w-full" />
+    </div>
+  </div>
+);

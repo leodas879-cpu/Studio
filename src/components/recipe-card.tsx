@@ -4,7 +4,7 @@
 import type { Recipe } from "@/store/recipe-store";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "./ui/button";
-import { Heart, ArrowRight, Vegan, Beef, WheatOff } from "lucide-react";
+import { Heart, ArrowRight } from "lucide-react";
 import { useRecipeStore } from "@/store/recipe-store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -39,7 +39,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
         <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden rounded-xl border">
             <div className="relative">
                 <Image 
-                    src={`https://dummyimage.com/600x400/f5a623/ffffff.png&text=${encodeURIComponent(recipe.recipeName)}`}
+                    src={`https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&h=400&fit=crop`}
                     alt={recipe.recipeName}
                     data-ai-hint="food dish"
                     width={600}
