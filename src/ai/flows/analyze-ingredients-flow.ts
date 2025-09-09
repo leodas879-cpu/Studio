@@ -39,7 +39,7 @@ const TasteSuggestionSchema = z.object({
 const AnalyzeIngredientsOutputSchema = z.object({
   isCompatible: z.boolean().describe('Whether the combination of ingredients is viable for a recipe.'),
   incompatibilityReason: z.string().optional().describe('If not compatible, the reason why.'),
-  substitutions: z.array(SubstitutionSchema).optional().describe('A list of suggested substitutions to make the recipe compatible.'),
+  substitutions: z.array(SubstitutionSchema).optional().describe('A list of suggested substitutions to make the recipe compatible. If there are multiple incompatibilities, the suggestions should work together to create a cohesive and valid new recipe base.'),
   tasteSuggestions: z.array(TasteSuggestionSchema).optional().describe('A list of suggestions to improve the taste profile of the recipe, even if it is compatible.'),
 });
 export type AnalyzeIngredientsOutput = z.infer<typeof AnalyzeIngredientsOutputSchema>;
@@ -79,8 +79,9 @@ const analyzeIngredientsPrompt = ai.definePrompt({
 *   **Step 1:** When user selects ingredients, check rules before recipe generation.
 *   **Step 2:** If an invalid combination is found →
     *   Set \`isCompatible\` to \`false\`.
-    *   Provide a clear, scientific, or culinary-based \`incompatibilityReason\`.
-    *   Provide a list of sensible \`substitutions\` to fix the core issue.
+    *   Provide a clear, scientific, or culinary-based \`incompatibilityReason\` that summarizes ALL the issues found.
+    *   Provide a list of sensible \`substitutions\` to fix the core issues.
+    *   **CRITICAL**: If multiple substitutions are needed, ensure they work together to create a NEW, cohesive, and logical recipe base. For example, if the user combines 'chicken', 'milk', and 'chocolate', don't just suggest random replacements. A good suggestion might be to replace 'milk' and 'chocolate' with 'coconut milk' and 'chili powder' to pivot towards a savory, mole-like dish.
 *   **Step 3:** If the combination is Viable but Improvable (obeys hard rules, may break soft rules or just be bland):
     *   Set \`isCompatible\` to \`true\`.
     *   Provide a list of helpful \`tasteSuggestions\` to enhance the dish. Focus on balancing flavors (e.g., adding an acid like lemon to cut richness), building a flavor base (e.g., suggesting onion and garlic), or adding texture.

@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2, Trash2 } from "lucide-react";
+import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2, Trash2, ArrowRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -336,6 +336,7 @@ export function RecipeGenerator() {
     setIsLoading(true);
     setGeneratedRecipe(null);
     setAnalysisResult(null);
+    setShowIncompatibleDialog(false);
 
     const input = {
       ingredients: selectedIngredients,
@@ -398,21 +399,28 @@ export function RecipeGenerator() {
         }
     }
   };
+  
+  const handleApplyAllSubstitutions = () => {
+    if (!analysisResult?.substitutions) return;
 
-  const handleSubstitution = (ingredientToReplace: string, suggestion: string) => {
-    setSelectedIngredients(prev => {
-      const newIngredients = prev.filter(i => i !== ingredientToReplace);
-      if (!newIngredients.includes(suggestion)) {
-        newIngredients.push(suggestion);
-      }
-      return newIngredients;
+    let newIngredients = [...selectedIngredients];
+    analysisResult.substitutions.forEach(sub => {
+        newIngredients = newIngredients.filter(i => i !== sub.ingredientToReplace);
+        if (!newIngredients.includes(sub.suggestion)) {
+            newIngredients.push(sub.suggestion);
+        }
     });
+
+    setSelectedIngredients(newIngredients);
     setShowIncompatibleDialog(false);
     setAnalysisResult(null);
+    // You might want to automatically re-run analysis or generation here
+    // For now, we'll let the user click "Generate" again.
   };
-  
+
   const handleClearPantry = () => {
     setSelectedIngredients([]);
+    setAnalysisResult(null);
   }
 
   const handleTakePicture = async () => {
@@ -676,26 +684,26 @@ export function RecipeGenerator() {
                         </div>
                     </DialogTitle>
                 </DialogHeader>
-                <div className="py-2">
-                    <h3 className="font-semibold mb-3 text-lg font-headline">Suggested Substitutions:</h3>
-                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                        {analysisResult?.substitutions?.map((sub, index) => (
-                            <button 
-                                key={index} 
-                                className="w-full text-left p-3 border rounded-lg hover:bg-accent transition-colors flex flex-col"
-                                onClick={() => handleSubstitution(sub.ingredientToReplace, sub.suggestion)}
-                            >
-                                <p className="font-semibold text-primary">Replace '{sub.ingredientToReplace}' with '{sub.suggestion}'</p>
-                                <p className="text-sm text-muted-foreground mt-1">{sub.reason}</p>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <DialogFooter className="grid grid-cols-2 gap-2 sm:grid-cols-1">
-                    <Button variant="outline" onClick={() => proceedWithGeneration()}>Ignore & Proceed Anyway</Button>
-                    <DialogClose asChild>
-                      <Button variant="ghost" onClick={() => setShowIncompatibleDialog(false)}>Let me fix it</Button>
-                    </DialogClose>
+                {analysisResult?.substitutions && analysisResult.substitutions.length > 0 && (
+                  <div className="py-2">
+                      <h3 className="font-semibold mb-3 text-lg font-headline">Suggested Fix:</h3>
+                      <div className="space-y-3 max-h-60 overflow-y-auto pr-2 bg-accent/50 p-3 rounded-md border">
+                          {analysisResult.substitutions.map((sub, index) => (
+                              <div key={index} className="flex items-center justify-between text-sm">
+                                  <div className="flex items-center gap-2">
+                                      <span className="text-muted-foreground line-through">{sub.ingredientToReplace}</span>
+                                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                                      <span className="font-semibold text-primary">{sub.suggestion}</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground text-right ml-2">{sub.reason}</p>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+                )}
+                <DialogFooter className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <Button onClick={handleApplyAllSubstitutions}>Apply Suggestions</Button>
+                    <Button variant="outline" onClick={() => proceedWithGeneration()}>Ignore & Proceed</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
