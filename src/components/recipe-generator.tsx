@@ -529,13 +529,13 @@ export function RecipeGenerator() {
   );
 
   return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 gap-8 items-start lg:grid-cols-2">
         <div className="space-y-6">
           <Card className="bg-card/70">
             <CardHeader>
               <CardTitle className="font-headline text-2xl">1. Choose Your Ingredients</CardTitle>
               <CardDescription>Select the items you have on hand. The list will update based on your diet.</CardDescription>
-                <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                <div className="flex flex-col gap-2 mt-2 sm:flex-row">
                     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" className="flex-1"><Camera className="mr-2"/>Analyze with Camera</Button>
@@ -579,7 +579,7 @@ export function RecipeGenerator() {
                     </Button>
                 </div>
                  {selectedIngredients.length > 0 && (
-                    <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground justify-start p-0 h-auto hover:bg-transparent">
+                    <Button variant="ghost" size="sm" onClick={handleClearPantry} className="h-auto justify-start p-0 text-muted-foreground hover:bg-transparent">
                         <X className="mr-1 h-4 w-4"/>
                         Clear selected items
                     </Button>
@@ -587,22 +587,22 @@ export function RecipeGenerator() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative flex items-center gap-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Search ingredients..."
-                  className="pl-10 flex-1"
+                  className="flex-1 pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                  <Button variant="outline" size="icon" onClick={handleMicClick}>
-                    <Mic className={cn("h-5 w-5", listening && "text-red-500 animate-pulse")} />
+                    <Mic className={cn("h-5 w-5", listening && "animate-pulse text-red-500")} />
                  </Button>
               </div>
-              <ScrollArea className="h-60 border rounded-md">
+              <ScrollArea className="h-60 rounded-md border">
                 <div className="p-1">
                   {filteredIngredients.map((ingredient) => (
-                    <div key={ingredient.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                    <div key={ingredient.id} className="flex items-center justify-between rounded-md p-2 hover:bg-accent">
                         <div className="flex items-center space-x-3">
                             <Checkbox
                                 id={ingredient.id}
@@ -623,7 +623,7 @@ export function RecipeGenerator() {
                                 {groceryStores.map(store => (
                                      <DropdownMenuItem key={store.name} asChild>
                                         <a href={getStoreUrl(store.name, ingredient.name)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                                            <span className={cn("w-2 h-2 rounded-full", store.color)}></span>
+                                            <span className={cn("h-2 w-2 rounded-full", store.color)}></span>
                                             {store.name}
                                         </a>
                                     </DropdownMenuItem>
@@ -642,9 +642,9 @@ export function RecipeGenerator() {
               <CardTitle className="font-headline text-2xl">2. Set Dietary Preferences</CardTitle>
               <CardDescription>Tailor the recipe to your dietary needs.</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {Object.keys(dietaryPreferences).map((key) => (
-                <div key={key} className="flex items-center justify-between p-3 border rounded-md">
+                <div key={key} className="flex items-center justify-between rounded-md border p-3">
                   <Label htmlFor={key} className="capitalize font-medium">
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </Label>
@@ -659,7 +659,7 @@ export function RecipeGenerator() {
           </Card>
           
           {(isAnalysisLoading || isImageAnalysisLoading) && (
-             <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700">
+             <Card className="border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-300"><Utensils className="animate-pulse" />{isImageAnalysisLoading ? 'Analyzing Image...' : 'Analyzing Ingredients...'}</CardTitle>
                     <CardDescription className="text-blue-700 dark:text-blue-400">{isImageAnalysisLoading ? 'Our AI is identifying your ingredients from the photo.' : 'Our AI chef is checking your combination for taste and compatibility.'}</CardDescription>
@@ -668,29 +668,29 @@ export function RecipeGenerator() {
           )}
 
           {analysisResult && analysisResult.isCompatible && analysisResult.tasteSuggestions && analysisResult.tasteSuggestions.length > 0 && (
-             <Card className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700">
+             <Card className="border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300"><ThumbsUp/>Possible Combo!</CardTitle>
                     <CardDescription className="text-green-700 dark:text-green-400">This looks like a great start! Here are some suggestions to make it even better.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                     {analysisResult.tasteSuggestions.map((s, i) => (
-                         <div key={i} className="flex items-start gap-3 p-2 rounded-md bg-green-100/50 dark:bg-green-900/30">
-                            <Lightbulb className="w-5 h-5 mt-1 text-green-600 dark:text-green-400" />
+                         <div key={i} className="flex items-start gap-3 rounded-md bg-green-100/50 p-2 dark:bg-green-900/30">
+                            <Lightbulb className="mt-1 h-5 w-5 text-green-600 dark:text-green-400" />
                             <div>
                                 <p className="font-semibold text-green-900 dark:text-green-200">{s.suggestion}</p>
                                 <p className="text-sm text-green-800 dark:text-green-300">{s.reason}</p>
                             </div>
                         </div>
                     ))}
-                    <Button onClick={proceedWithGeneration} className="w-full mt-4">Continue to Recipe</Button>
+                    <Button onClick={proceedWithGeneration} className="mt-4 w-full">Continue to Recipe</Button>
                 </CardContent>
             </Card>
           )}
 
           <div>
-            <div className="flex justify-between items-center mb-2">
-                <h3 className="text-xl font-semibold font-headline">Your Pantry</h3>
+            <div className="mb-2 flex items-center justify-between">
+                <h3 className="font-headline text-xl font-semibold">Your Pantry</h3>
                 {selectedIngredients.length > 0 && (
                     <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground">
                         <Trash2 className="mr-2" />
@@ -698,20 +698,20 @@ export function RecipeGenerator() {
                     </Button>
                 )}
             </div>
-            <div className="p-4 rounded-lg border bg-card/50 min-h-[6rem] transition-all">
+            <div className="min-h-[6rem] rounded-lg border bg-card/50 p-4 transition-all">
               {selectedIngredients.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {selectedIngredients.map((ingredient) => (
-                    <Badge key={ingredient} variant="secondary" className="text-base py-1 px-3">{ingredient}</Badge>
+                    <Badge key={ingredient} variant="secondary" className="px-3 py-1 text-base">{ingredient}</Badge>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm p-4 text-center">Your selected ingredients will show up here.</p>
+                <p className="p-4 text-center text-sm text-muted-foreground">Your selected ingredients will show up here.</p>
               )}
             </div>
           </div>
 
-          <Button onClick={handleSubmit} disabled={isAnalysisLoading || isLoading || isImageAnalysisLoading} size="lg" className="w-full text-lg py-7 shadow-lg hover:shadow-primary/50 transition-shadow">
+          <Button onClick={handleSubmit} disabled={isAnalysisLoading || isLoading || isImageAnalysisLoading} size="lg" className="w-full py-7 text-lg shadow-lg transition-shadow hover:shadow-primary/50">
             {(isAnalysisLoading || isLoading || isImageAnalysisLoading) ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
             {isAnalysisLoading ? 'Analyzing...' : (isLoading ? 'Generating...' : (isImageAnalysisLoading ? 'Analyzing Image...': 'Generate Recipe'))}
           </Button>
@@ -725,11 +725,11 @@ export function RecipeGenerator() {
         <Dialog open={showIncompatibleDialog} onOpenChange={setShowIncompatibleDialog}>
              <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="flex items-start gap-3 text-destructive text-xl font-headline">
-                        <TriangleAlert className="w-10 h-10" />
+                    <DialogTitle className="flex items-start gap-3 font-headline text-xl text-destructive">
+                        <TriangleAlert className="h-10 w-10" />
                         <div className="mt-1">
                             Impossible Combo
-                            <DialogDescription className="pt-2 text-base text-left text-muted-foreground">
+                            <DialogDescription className="pt-2 text-left text-base text-muted-foreground">
                                 {analysisResult?.incompatibilityReason}
                             </DialogDescription>
                         </div>
@@ -737,16 +737,16 @@ export function RecipeGenerator() {
                 </DialogHeader>
                 {analysisResult?.substitutions && analysisResult.substitutions.length > 0 && (
                   <div className="py-2">
-                      <h3 className="font-semibold mb-3 text-lg font-headline">Suggested Fix:</h3>
-                      <div className="space-y-3 max-h-60 overflow-y-auto pr-2 bg-accent/50 p-3 rounded-md border">
+                      <h3 className="font-headline mb-3 text-lg font-semibold">Suggested Fix:</h3>
+                      <div className="max-h-60 space-y-3 overflow-y-auto rounded-md border bg-accent/50 p-3 pr-2">
                           {analysisResult.substitutions.map((sub, index) => (
                               <div key={index} className="flex items-center justify-between text-sm">
                                   <div className="flex items-center gap-2">
                                       <span className="text-muted-foreground line-through">{sub.ingredientToReplace}</span>
-                                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
                                       <span className="font-semibold text-primary">{sub.suggestion}</span>
                                   </div>
-                                  <p className="text-xs text-muted-foreground text-right ml-2">{sub.reason}</p>
+                                  <p className="ml-2 text-right text-xs text-muted-foreground">{sub.reason}</p>
                               </div>
                           ))}
                       </div>
@@ -762,3 +762,4 @@ export function RecipeGenerator() {
       </div>
   );
 }
+
