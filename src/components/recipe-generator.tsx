@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2, Trash2, ArrowRight } from "lucide-react";
+import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2, Trash2, ArrowRight, ShoppingCart } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 const ingredientsData = [
   {"id":"ing001","name":"chicken","category":"meat","tags":["animal-product","protein"]},
@@ -231,6 +240,21 @@ const ingredientsData = [
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 const ingredientCatalog = ingredientsData.map(i => i.name);
+
+const groceryStores = [
+    { name: "Zepto", url: "https://www.zeptonow.com/search?query=", color: "bg-green-500" },
+    { name: "Swiggy Instamart", url: "https://www.swiggy.com/instamart/search?custom_back=true&query=", color: "bg-orange-500" },
+    { name: "BigBasket", url: "https://www.bigbasket.com/ps/?q=", suffix: "&nc=as", color: "bg-green-700" },
+    { name: "Blinkit", url: "https://blinkit.com/s/?q=", color: "bg-yellow-400" },
+];
+
+const getStoreUrl = (storeName: string, ingredientName: string) => {
+    const store = groceryStores.find(s => s.name === storeName);
+    if (!store) return "#";
+    const encodedIngredient = encodeURIComponent(ingredientName);
+    return `${store.url}${encodedIngredient}${store.suffix || ''}`;
+};
+
 
 export function RecipeGenerator() {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
@@ -554,6 +578,12 @@ export function RecipeGenerator() {
                         <Upload className="mr-2"/>Upload Image
                     </Button>
                 </div>
+                 {selectedIngredients.length > 0 && (
+                    <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground justify-start p-0 h-auto">
+                        <X className="mr-1 h-4 w-4"/>
+                        Clear selected items
+                    </Button>
+                )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative flex items-center gap-2">
@@ -569,16 +599,37 @@ export function RecipeGenerator() {
                     <Mic className={cn("h-5 w-5", listening && "text-red-500 animate-pulse")} />
                  </Button>
               </div>
-              <ScrollArea className="h-60 border rounded-md p-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <ScrollArea className="h-60 border rounded-md">
+                <div className="p-1">
                   {filteredIngredients.map((ingredient) => (
-                    <div key={ingredient.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={ingredient.id}
-                        checked={selectedIngredients.includes(ingredient.name)}
-                        onCheckedChange={() => handleIngredientToggle(ingredient.name)}
-                      />
-                      <Label htmlFor={ingredient.id} className="cursor-pointer text-sm font-normal">{ingredient.name}</Label>
+                    <div key={ingredient.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                        <div className="flex items-center space-x-3">
+                            <Checkbox
+                                id={ingredient.id}
+                                checked={selectedIngredients.includes(ingredient.name)}
+                                onCheckedChange={() => handleIngredientToggle(ingredient.name)}
+                            />
+                            <Label htmlFor={ingredient.id} className="cursor-pointer text-sm font-medium">{ingredient.name}</Label>
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                    <ShoppingCart className="mr-2 h-4 w-4" /> Buy
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuLabel>Buy from:</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {groceryStores.map(store => (
+                                     <DropdownMenuItem key={store.name} asChild>
+                                        <a href={getStoreUrl(store.name, ingredient.name)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                                            <span className={cn("w-2 h-2 rounded-full", store.color)}></span>
+                                            {store.name}
+                                        </a>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                   ))}
                 </div>
@@ -711,9 +762,5 @@ export function RecipeGenerator() {
       </div>
   );
 }
-
-    
-
-    
 
     
