@@ -668,17 +668,44 @@ export function RecipeGenerator() {
     }
   };
 
-  const handleGenerateClick = () => {
+  const handleGenerateClick = async () => {
     if (selectedIngredients.length === 0) {
-        toast({
-            variant: "destructive",
-            title: "No Ingredients Selected",
-            description: "Please select at least one ingredient to generate a recipe.",
-        });
+      toast({
+        variant: "destructive",
+        title: "No Ingredients Selected",
+        description: "Please select at least one ingredient to generate a recipe.",
+      });
+      return;
+    }
+    
+    setIsAnalysisLoading(true);
+    setAnalysisResult(null);
+    setGeneratedRecipe(null);
+
+    const analysisInput = {
+      ingredients: selectedIngredients,
+      dietaryPreferences,
+    };
+    
+    const analysisResultData = await handleAnalyzeIngredients(analysisInput);
+    setIsAnalysisLoading(false);
+
+    if (analysisResultData.error) {
+        toast({ variant: "destructive", title: "Analysis Failed", description: analysisResultData.error });
         return;
     }
-    proceedWithGeneration();
-  }
+
+    if (analysisResultData.data) {
+      setAnalysisResult(analysisResultData.data);
+      if (analysisResultData.data.isCompatible) {
+        // If compatible, proceed to generate the recipe
+        await proceedWithGeneration();
+      } else {
+        // If not compatible, show the dialog with suggestions
+        setShowIncompatibleDialog(true);
+      }
+    }
+  };
   
   const handleApplyAllSubstitutions = () => {
     if (!analysisResult?.substitutions) return;
@@ -1032,4 +1059,5 @@ export function RecipeGenerator() {
   );
 }
 
+    
     
