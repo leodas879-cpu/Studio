@@ -6,6 +6,8 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
+  SheetHeader,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu, ChefHat, Home, Heart, Clock, User, LogOut, Sun, Moon, Laptop } from "lucide-react";
@@ -61,7 +63,8 @@ export function MobileHeader({ isLanding = false }: { isLanding?: boolean }) {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 flex flex-col">
-        <div className="p-6 border-b">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle className="sr-only">Menu</SheetTitle>
           <div className="flex items-center gap-3">
             <div className="bg-primary/20 p-2 rounded-lg">
               <ChefHat className="h-8 w-8 text-primary" />
@@ -70,7 +73,7 @@ export function MobileHeader({ isLanding = false }: { isLanding?: boolean }) {
               <h1 className="text-2xl font-bold font-headline">ChefAI</h1>
             </div>
           </div>
-        </div>
+        </SheetHeader>
 
         {isLanding ? (
             <nav className="flex-1 p-4 space-y-2">
