@@ -1,8 +1,13 @@
+
 import { create } from 'zustand';
 import type { GenerateRecipeOutput } from '@/ai/flows/generate-recipe-flow';
 import { getRecipes, saveRecipe, removeRecipe } from '@/services/recipe-service';
 
-export type Recipe = GenerateRecipeOutput & {
+// The GenerateRecipeOutput now has a structured ingredients list.
+// The app's internal `Recipe` type will continue to use a simple string array for now for compatibility.
+export type Recipe = Omit<GenerateRecipeOutput, 'requiredIngredients' | 'alternativeSuggestions'> & {
+  requiredIngredients: string[];
+  alternativeSuggestions?: string[];
   vegetarian?: boolean;
   vegan?: boolean;
   glutenFree?: boolean;
@@ -20,6 +25,16 @@ interface RecipeStore {
   clearRecipes: () => void;
 }
 
+// Helper to convert recipe types for storage/display
+function toAppRecipe(recipe: any): Recipe {
+    return {
+        ...recipe,
+        requiredIngredients: recipe.requiredIngredients.map((ing: any) => typeof ing === 'string' ? ing : `${ing.quantity} ${ing.name}`),
+        alternativeSuggestions: recipe.alternativeSuggestions || [],
+    };
+}
+
+
 export const useRecipeStore = create<RecipeStore>((set, get) => ({
   recentRecipes: [],
   favoriteRecipes: [],
@@ -27,8 +42,9 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   
   addRecentRecipe: (recipe) => {
     set((state) => {
-      const filteredRecents = state.recentRecipes.filter(r => r.recipeName !== recipe.recipeName);
-      const newRecents = [recipe, ...filteredRecents].slice(0, 10);
+      const appRecipe = toAppRecipe(recipe);
+      const filteredRecents = state.recentRecipes.filter(r => r.recipeName !== appRecipe.recipeName);
+      const newRecents = [appRecipe, ...filteredRecents].slice(0, 10);
       return { recentRecipes: newRecents };
     });
   },
@@ -36,27 +52,31 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   toggleFavorite: async (recipe: Recipe, uid: string) => {
     const state = get();
     const isFavorite = state.favoriteRecipes.some(r => r.recipeName === recipe.recipeName);
+    const appRecipe = toAppRecipe(recipe);
     
     if (isFavorite) {
-      await removeRecipe(uid, recipe.recipeName);
+      await removeRecipe(uid, appRecipe.recipeName);
       set({ 
-        favoriteRecipes: state.favoriteRecipes.filter(r => r.recipeName !== recipe.recipeName) 
+        favoriteRecipes: state.favoriteRecipes.filter(r => r.recipeName !== appRecipe.recipeName) 
       });
     } else {
-      await saveRecipe(uid, { ...recipe, isFavorite: true });
+      await saveRecipe(uid, { ...appRecipe, isFavorite: true });
       set({ 
-        favoriteRecipes: [{ ...recipe, isFavorite: true }, ...state.favoriteRecipes]
+        favoriteRecipes: [{ ...appRecipe, isFavorite: true }, ...state.favoriteRecipes]
       });
     }
   },
 
   loadRecipes: async (uid: string) => {
-    const recipes = await getRecipes(uid);
-    set({ favoriteRecipes: recipes.filter(r => r.isFavorite) });
+    const recipesFromDB = await getRecipes(uid);
+    const favoriteAppRecipes = recipesFromDB
+        .filter(r => r.isFavorite)
+        .map(toAppRecipe);
+    set({ favoriteRecipes: favoriteAppRecipes });
   },
 
   setSelectedRecipe: (recipe) => {
-    set({ selectedRecipe: recipe });
+    set({ selectedRecipe: recipe ? toAppRecipe(recipe) : null });
   },
 
   clearRecipes: () => {

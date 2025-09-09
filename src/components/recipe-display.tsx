@@ -1,11 +1,12 @@
-import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe-flow";
+
+import type { Recipe } from "@/store/recipe-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UtensilsCrossed, Heart } from "lucide-react";
+import { UtensilsCrossed, Heart, Clock, Users, Globe } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
-import { useRecipeStore, type Recipe } from "@/store/recipe-store";
+import { useRecipeStore } from "@/store/recipe-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -55,10 +56,46 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
   return (
     <Card className="h-full overflow-auto animate-in fade-in-50 duration-500 shadow-lg flex flex-col">
       <CardHeader>
-        <CardTitle className="text-4xl font-headline tracking-tight">{recipe.recipeName}</CardTitle>
-        <CardDescription>A delicious recipe generated just for you by ChefAI.</CardDescription>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-4xl font-headline tracking-tight">{recipe.recipeName}</CardTitle>
+            <CardDescription>A delicious recipe generated just for you by ChefAI.</CardDescription>
+          </div>
+          {recipe.cuisine && (
+            <Badge variant="outline" className="flex items-center gap-2 text-base">
+              <Globe className="h-4 w-4"/>
+              {recipe.cuisine}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-8 flex-1">
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+            {recipe.prepTime && (
+                <div className="p-2 rounded-lg bg-accent/50">
+                    <Clock className="mx-auto w-7 h-7 text-primary"/>
+                    <p className="text-xl font-bold">{recipe.prepTime} <span className="text-sm">min</span></p>
+                    <p className="text-xs text-muted-foreground">Prep Time</p>
+                </div>
+            )}
+            {recipe.cookTime && (
+                <div className="p-2 rounded-lg bg-accent/50">
+                    <Clock className="mx-auto w-7 h-7 text-primary"/>
+                    <p className="text-xl font-bold">{recipe.cookTime} <span className="text-sm">min</span></p>
+                    <p className="text-xs text-muted-foreground">Cook Time</p>
+                </div>
+            )}
+             {recipe.servings && (
+                <div className="p-2 rounded-lg bg-accent/50 col-span-2 sm:col-span-1">
+                    <Users className="mx-auto w-7 h-7 text-primary"/>
+                    <p className="text-xl font-bold">{recipe.servings}</p>
+                    <p className="text-xs text-muted-foreground">Servings</p>
+                </div>
+            )}
+        </div>
+
+
         <div>
           <h3 className="text-xl font-semibold mb-3 font-headline">Required Ingredients</h3>
           <div className="flex flex-wrap gap-2">
@@ -78,6 +115,16 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
             ))}
           </ol>
         </div>
+
+        {recipe.servingSuggestions && (
+          <>
+            <Separator />
+            <div>
+              <h3 className="text-xl font-semibold mb-3 font-headline">Serving Suggestions</h3>
+              <p className="text-base leading-relaxed">{recipe.servingSuggestions}</p>
+            </div>
+          </>
+        )}
 
         {recipe.alternativeSuggestions && recipe.alternativeSuggestions.length > 0 && (
           <>
