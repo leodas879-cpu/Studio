@@ -400,7 +400,13 @@ export function RecipeGenerator() {
   };
 
   const handleSubstitution = (ingredientToReplace: string, suggestion: string) => {
-    setSelectedIngredients(prev => [...prev.filter(i => i !== ingredientToReplace), suggestion]);
+    setSelectedIngredients(prev => {
+      const newIngredients = prev.filter(i => i !== ingredientToReplace);
+      if (!newIngredients.includes(suggestion)) {
+        newIngredients.push(suggestion);
+      }
+      return newIngredients;
+    });
     setShowIncompatibleDialog(false);
     setAnalysisResult(null);
   };
@@ -697,3 +703,5 @@ export function RecipeGenerator() {
       </div>
   );
 }
+
+    
