@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RecipeDisplay } from "./recipe-display";
-import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2 } from "lucide-react";
+import { Sparkles, Search, Utensils, ThumbsUp, Lightbulb, TriangleAlert, X, Mic, Camera, VideoOff, Upload, Loader2, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -380,10 +380,8 @@ export function RecipeGenerator() {
     setAnalysisResult(null);
   };
   
-  const handleCancelAndClear = () => {
+  const handleClearPantry = () => {
     setSelectedIngredients([]);
-    setShowIncompatibleDialog(false);
-    setAnalysisResult(null);
   }
 
   const handleTakePicture = async () => {
@@ -601,7 +599,15 @@ export function RecipeGenerator() {
           )}
 
           <div>
-            <h3 className="text-xl font-semibold mb-2 font-headline">Your Pantry</h3>
+            <div className="flex justify-between items-center mb-2">
+                <h3 className="text-xl font-semibold font-headline">Your Pantry</h3>
+                {selectedIngredients.length > 0 && (
+                    <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground">
+                        <Trash2 className="mr-2" />
+                        Clear All
+                    </Button>
+                )}
+            </div>
             <div className="p-4 rounded-lg border bg-card/50 min-h-[6rem] transition-all">
               {selectedIngredients.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -632,7 +638,7 @@ export function RecipeGenerator() {
                     <DialogTitle className="flex items-start gap-3 text-destructive text-xl font-headline">
                         <TriangleAlert className="w-10 h-10" />
                         <div className="mt-1">
-                            Incompatible Ingredients
+                            Impossible Combo
                             <DialogDescription className="pt-2 text-base text-left text-muted-foreground">
                                 {analysisResult?.incompatibilityReason}
                             </DialogDescription>
@@ -666,5 +672,3 @@ export function RecipeGenerator() {
       </div>
   );
 }
-
-    
