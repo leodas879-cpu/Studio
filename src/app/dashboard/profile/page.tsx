@@ -275,7 +275,7 @@ export default function ProfilePage() {
       </div>
 
       <Tabs defaultValue="profile">
-        <TabsList>
+        <TabsList className="w-full h-auto overflow-x-auto overflow-y-hidden justify-start">
           <TabsTrigger value="profile"><User className="mr-2"/>Profile</TabsTrigger>
           <TabsTrigger value="preferences"><Settings className="mr-2"/>Preferences</TabsTrigger>
           <TabsTrigger value="security"><Shield className="mr-2"/>Security</TabsTrigger>
@@ -296,7 +296,7 @@ export default function ProfilePage() {
                     <AvatarImage src={localProfile.profilePhoto} alt="Profile Photo" />
                     <AvatarFallback><User className="w-16 h-16" /></AvatarFallback>
                   </Avatar>
-                  <div className="flex gap-4 w-full">
+                  <div className="flex flex-col sm:flex-row gap-4 w-full">
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                     <Button variant="outline" className="w-full" onClick={triggerFileSelect}><Upload className="mr-2"/>Choose File</Button>
                     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
@@ -774,13 +774,11 @@ export default function ProfilePage() {
 
                  <div className="space-y-4">
                     <h3 className="text-base font-semibold flex items-center gap-2"><Database /> Data Management</h3>
-                    <div className="space-y-2 pl-6">
-                        <div className="flex items-center gap-4">
-                           <Button variant="outline"><Download className="mr-2"/>Export My Data</Button>
-                           <Button variant="destructive"><Trash2 className="mr-2"/>Delete Account</Button>
-                        </div>
-                         <p className="text-sm text-muted-foreground">Export your data or permanently delete your account and all associated data</p>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pl-6">
+                       <Button variant="outline"><Download className="mr-2"/>Export My Data</Button>
+                       <Button variant="destructive"><Trash2 className="mr-2"/>Delete Account</Button>
                     </div>
+                    <p className="text-sm text-muted-foreground pl-6">Export your data or permanently delete your account and all associated data</p>
                 </div>
             </CardContent>
           </Card>
@@ -843,5 +841,3 @@ const ProfileSkeleton = () => (
       </div>
     </div>
 )
-
-    

@@ -535,7 +535,7 @@ export function RecipeGenerator() {
             <CardHeader>
               <CardTitle className="font-headline text-2xl">1. Choose Your Ingredients</CardTitle>
               <CardDescription>Select the items you have on hand. The list will update based on your diet.</CardDescription>
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-col sm:flex-row gap-2 mt-2">
                     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" className="flex-1"><Camera className="mr-2"/>Analyze with Camera</Button>
@@ -579,7 +579,7 @@ export function RecipeGenerator() {
                     </Button>
                 </div>
                  {selectedIngredients.length > 0 && (
-                    <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground justify-start p-0 h-auto">
+                    <Button variant="ghost" size="sm" onClick={handleClearPantry} className="text-muted-foreground justify-start p-0 h-auto hover:bg-transparent">
                         <X className="mr-1 h-4 w-4"/>
                         Clear selected items
                     </Button>
@@ -762,5 +762,3 @@ export function RecipeGenerator() {
       </div>
   );
 }
-
-    
