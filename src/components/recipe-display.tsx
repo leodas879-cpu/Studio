@@ -95,25 +95,33 @@ export function RecipeDisplay({ recipe, isLoading }: RecipeDisplayProps) {
             )}
         </div>
 
-
-        <div>
-          <h3 className="text-xl font-semibold mb-3 font-headline">Required Ingredients</h3>
-          <div className="flex flex-wrap gap-2">
-            {recipe.requiredIngredients.map((ingredient) => (
-              <Badge key={ingredient} variant="default" className="bg-primary/20 text-primary-foreground hover:bg-primary/30 text-sm">{ingredient}</Badge>
-            ))}
-          </div>
-        </div>
-
         <Separator />
 
-        <div>
-          <h3 className="text-xl font-semibold mb-3 font-headline">Cooking Instructions</h3>
-          <ol className="list-decimal list-inside space-y-4 text-base">
-            {recipe.steps.map((step, index) => (
-              <li key={index} className="pl-2 leading-relaxed">{step}</li>
-            ))}
-          </ol>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h3 className="text-2xl font-semibold mb-4 font-headline text-center">Ingredients</h3>
+                <ul className="space-y-3">
+                    {recipe.requiredIngredients.map((ingredient, index) => (
+                    <li key={`${ingredient}-${index}`} className="flex items-start gap-3">
+                        <span className="mt-1.5 h-2 w-2 rounded-full bg-primary/80 shrink-0"></span>
+                        <span className="text-base">{ingredient}</span>
+                    </li>
+                    ))}
+                </ul>
+            </div>
+            <div>
+                <h3 className="text-2xl font-semibold mb-4 font-headline text-center">Instructions</h3>
+                <ol className="space-y-4">
+                    {recipe.steps.map((step, index) => (
+                    <li key={index} className="flex items-start gap-4">
+                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center">
+                            {index + 1}
+                        </div>
+                        <p className="flex-1 pt-1 leading-relaxed text-base">{step}</p>
+                    </li>
+                    ))}
+                </ol>
+            </div>
         </div>
 
         {recipe.servingSuggestions && (
